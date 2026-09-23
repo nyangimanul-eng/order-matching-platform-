@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrderMatch</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .login {
+      background: #2563eb;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: white;
+    }
+
+    .hero h1 {
+      font-size: 40px;
+      margin-bottom: 15px;
+    }
+
+    .hero p {
+      color: #666;
+      font-size: 18px;
+      margin-bottom: 25px;
+    }
+
+    .start-btn {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 7px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .section {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 20px;
+    }
+
+    .section h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+      text-align: center;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: #666;
+      line-height: 1.5;
+    }
+
+    footer {
+      margin-top: 50px;
+      background: #111827;
+      color: white;
+      text-align: center;
+      padding: 25px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">OrderMatch</div>
+    <a href="#" class="login">Login</a>
+  </header>
+
+  <section class="hero">
+    <h1>Smart Order Matching</h1>
+    <p>Match available orders with the right products and manage your transactions.</p>
+    <button class="start-btn" onclick="startPlatform()">Get Started</button>
+  </section>
+
+  <section class="section">
+    <h2>How It Works</h2>
+
+    <div class="cards">
+
+      <div class="card">
+        <h3>1. Deposit</h3>
+        <p>Add funds to your platform account to participate in available orders.</p>
+      </div>
+
+      <div class="card">
+        <h3>2. Match Orders</h3>
+        <p>Select available orders and match them according to the required amount.</p>
+      </div>
+
+      <div class="card">
+        <h3>3. Track</h3>
+        <p>Monitor your matched orders and account activity from your dashboard.</p>
+      </div>
+
+      <div class="card">
+        <h3>4. Withdraw</h3>
+        <p>Request withdrawals from your available account balance.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <p>© 2026 OrderMatch. All rights reserved.</p>
+  </footer>
+
+  <script>
+    function startPlatform() {
+      alert("Welcome to OrderMatch! The dashboard will be added next.");
+    }
+  </script>
+
+</body>
+</html>
