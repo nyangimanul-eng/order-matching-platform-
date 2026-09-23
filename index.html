@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OrderMatch</title>
+  <title>OrderMatch - Account</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     * {
       box-sizing: border-box;
-      margin: 0;
-      padding: 0;
       font-family: Arial, sans-serif;
     }
 
     body {
+      margin: 0;
       background: #f5f7fb;
       color: #222;
     }
@@ -32,135 +33,362 @@
       font-weight: bold;
     }
 
-    .login {
-      background: #2563eb;
-      color: white;
-      padding: 10px 18px;
-      border-radius: 6px;
-      text-decoration: none;
-    }
-
     .hero {
       text-align: center;
-      padding: 60px 20px;
+      padding: 45px 20px 25px;
       background: white;
     }
 
     .hero h1 {
-      font-size: 40px;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
 
     .hero p {
       color: #666;
-      font-size: 18px;
-      margin-bottom: 25px;
     }
 
-    .start-btn {
+    .container {
+      max-width: 450px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .box {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+    }
+
+    .box h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 7px;
+      font-size: 15px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 7px;
       background: #2563eb;
       color: white;
-      border: none;
-      padding: 14px 28px;
-      border-radius: 7px;
       font-size: 16px;
       cursor: pointer;
     }
 
-    .section {
-      max-width: 1000px;
-      margin: 40px auto;
+    button.secondary {
+      background: #111827;
+    }
+
+    .message {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .dashboard {
+      display: none;
+    }
+
+    .balance {
+      background: #111827;
+      color: white;
       padding: 20px;
-    }
-
-    .section h2 {
-      text-align: center;
-      margin-bottom: 25px;
-    }
-
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: white;
-      padding: 25px;
       border-radius: 10px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.08);
-      text-align: center;
+      margin-bottom: 15px;
     }
 
-    .card h3 {
-      margin-bottom: 10px;
+    .balance h3 {
+      margin: 0 0 8px;
     }
 
-    .card p {
-      color: #666;
-      line-height: 1.5;
+    .balance p {
+      font-size: 28px;
+      margin: 0;
     }
 
     footer {
-      margin-top: 50px;
+      margin-top: 40px;
       background: #111827;
       color: white;
       text-align: center;
-      padding: 25px;
+      padding: 20px;
     }
   </style>
 </head>
 
 <body>
 
-  <header>
-    <div class="logo">OrderMatch</div>
-    <a href="#" class="login">Login</a>
-  </header>
+<header>
+  <div class="logo">OrderMatch</div>
+</header>
 
-  <section class="hero">
-    <h1>Smart Order Matching</h1>
-    <p>Match available orders with the right products and manage your transactions.</p>
-    <button class="start-btn" onclick="startPlatform()">Get Started</button>
-  </section>
+<section class="hero">
+  <h1>Smart Order Matching</h1>
+  <p>Manage your account and available orders securely.</p>
+</section>
 
-  <section class="section">
-    <h2>How It Works</h2>
+<div class="container">
 
-    <div class="cards">
+  <!-- AUTHENTICATION -->
+  <div class="box" id="authBox">
 
-      <div class="card">
-        <h3>1. Deposit</h3>
-        <p>Add funds to your platform account to participate in available orders.</p>
-      </div>
+    <h2 id="authTitle">Create Account</h2>
 
-      <div class="card">
-        <h3>2. Match Orders</h3>
-        <p>Select available orders and match them according to the required amount.</p>
-      </div>
+    <input
+      type="text"
+      id="name"
+      placeholder="Full name"
+    >
 
-      <div class="card">
-        <h3>3. Track</h3>
-        <p>Monitor your matched orders and account activity from your dashboard.</p>
-      </div>
+    <input
+      type="email"
+      id="email"
+      placeholder="Email address"
+    >
 
-      <div class="card">
-        <h3>4. Withdraw</h3>
-        <p>Request withdrawals from your available account balance.</p>
-      </div>
+    <input
+      type="password"
+      id="password"
+      placeholder="Password"
+    >
 
+    <button id="signupButton" onclick="signUp()">
+      Create Account
+    </button>
+
+    <button class="secondary" onclick="showLogin()">
+      I already have an account
+    </button>
+
+    <div class="message" id="message"></div>
+
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="box dashboard" id="dashboard">
+
+    <h2>My Dashboard</h2>
+
+    <div class="balance">
+      <h3>Available Balance</h3>
+      <p>KES 0.00</p>
     </div>
-  </section>
 
-  <footer>
-    <p>© 2026 OrderMatch. All rights reserved.</p>
-  </footer>
+    <p id="userEmail"></p>
 
-  <script>
-    function startPlatform() {
-      alert("Welcome to OrderMatch! The dashboard will be added next.");
+    <button onclick="logout()">Logout</button>
+
+  </div>
+
+</div>
+
+<footer>
+  <p>© 2026 OrderMatch. All rights reserved.</p>
+</footer>
+
+<script>
+
+  const SUPABASE_URL =
+    "https://bdflurarenkcvcnttrya.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+  const supabaseClient =
+    window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+  async function signUp() {
+
+    const name =
+      document.getElementById("name").value.trim();
+
+    const email =
+      document.getElementById("email").value.trim();
+
+    const password =
+      document.getElementById("password").value;
+
+    const message =
+      document.getElementById("message");
+
+    if (!name || !email || !password) {
+      message.textContent =
+        "Please fill in all fields.";
+      return;
     }
-  </script>
+
+    if (password.length < 6) {
+      message.textContent =
+        "Password must contain at least 6 characters.";
+      return;
+    }
+
+    message.textContent =
+      "Creating your account...";
+
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+        email: email,
+        password: password,
+        options: {
+          data: {
+            full_name: name
+          }
+        }
+      });
+
+    if (error) {
+      message.textContent = error.message;
+      return;
+    }
+
+    if (data.user && !data.session) {
+      message.textContent =
+        "Account created. Check your email to confirm your account.";
+      return;
+    }
+
+    message.textContent =
+      "Account created successfully.";
+
+    showDashboard(data.user);
+  }
+
+  function showLogin() {
+
+    document.getElementById("authTitle").textContent =
+      "Login";
+
+    document.getElementById("name").style.display =
+      "none";
+
+    document.getElementById("signupButton").textContent =
+      "Login";
+
+    document.getElementById("signupButton").onclick =
+      login;
+
+    document.querySelector(".secondary").textContent =
+      "Create a new account";
+
+    document.querySelector(".secondary").onclick =
+      showSignup;
+
+    document.getElementById("message").textContent =
+      "";
+  }
+
+  function showSignup() {
+
+    document.getElementById("authTitle").textContent =
+      "Create Account";
+
+    document.getElementById("name").style.display =
+      "block";
+
+    document.getElementById("signupButton").textContent =
+      "Create Account";
+
+    document.getElementById("signupButton").onclick =
+      signUp;
+
+    document.querySelector(".secondary").textContent =
+      "I already have an account";
+
+    document.querySelector(".secondary").onclick =
+      showLogin;
+
+    document.getElementById("message").textContent =
+      "";
+  }
+
+  async function login() {
+
+    const email =
+      document.getElementById("email").value.trim();
+
+    const password =
+      document.getElementById("password").value;
+
+    const message =
+      document.getElementById("message");
+
+    if (!email || !password) {
+      message.textContent =
+        "Enter your email and password.";
+      return;
+    }
+
+    message.textContent =
+      "Logging in...";
+
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+    if (error) {
+      message.textContent =
+        error.message;
+      return;
+    }
+
+    showDashboard(data.user);
+  }
+
+  function showDashboard(user) {
+
+    document.getElementById("authBox").style.display =
+      "none";
+
+    document.getElementById("dashboard").style.display =
+      "block";
+
+    document.getElementById("userEmail").textContent =
+      "Logged in as: " + user.email;
+  }
+
+  async function logout() {
+
+    await supabaseClient.auth.signOut();
+
+    document.getElementById("dashboard").style.display =
+      "none";
+
+    document.getElementById("authBox").style.display =
+      "block";
+
+    showSignup();
+  }
+
+  async function checkSession() {
+
+    const { data } =
+      await supabaseClient.auth.getSession();
+
+    if (data.session) {
+      showDashboard(data.session.user);
+    }
+  }
+
+  checkSession();
+
+</script>
 
 </body>
 </html>
