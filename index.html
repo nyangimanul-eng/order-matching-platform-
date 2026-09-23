@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrderMatch</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #222;
+    }
+
+    .container {
+      width: 94%;
+      max-width: 900px;
+      margin: auto;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 18px 0;
+      margin-bottom: 20px;
+    }
+
+    header .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 16px;
+      background: white;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 12px 18px;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: bold;
+      background: #2563eb;
+      color: white;
+      margin-top: 8px;
+    }
+
+    button:hover {
+      opacity: 0.9;
+    }
+
+    .logout {
+      background: #dc2626;
+      margin: 0;
+    }
+
+    .match-btn {
+      background: #16a34a;
+    }
+
+    .deposit-btn {
+      background: #16a34a;
+      width: 48%;
+    }
+
+    .withdraw-btn {
+      background: #dc2626;
+      width: 48%;
+      float: right;
+    }
+
+    .clear {
+      clear: both;
+    }
+
+    .order {
+      border: 1px solid #e5e7eb;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .order h3 {
+      margin: 0 0 8px;
+    }
+
+    .amount {
+      font-size: 18px;
+      font-weight: bold;
+      color: #16a34a;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 6px;
+      background: #e5e7eb;
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .message {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .balance {
+      font-size: 24px;
+      font-weight: bold;
+      color: #2563eb;
+    }
+
+    .warning {
+      background: #fff7ed;
+      border-left: 4px solid #f97316;
+      padding: 12px;
+      margin-top: 12px;
+      border-radius: 6px;
+    }
+
+    .history-row {
+      border-bottom: 1px solid #e5e7eb;
+      padding: 12px 0;
+    }
+
+    .history-row:last-child {
+      border-bottom: none;
+    }
+
+    .transaction {
+      border: 1px solid #e5e7eb;
+      padding: 14px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .small {
+      color: #6b7280;
+      font-size: 14px;
+    }
+
+    .success {
+      color: #16a34a;
+    }
+
+    .error {
+      color: #dc2626;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- AUTH AREA -->
+  <div id="authSection">
+
+    <header>
+      <div class="container">
+        <h1>OrderMatch</h1>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <div id="loginBox" class="card">
+        <h2>Login</h2>
+
+        <input
+          type="email"
+          id="loginEmail"
+          placeholder="Email address"
+        >
+
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="Password"
+        >
+
+        <button onclick="login()">Login</button>
+
+        <button onclick="showSignup()">
+          Create Account
+        </button>
+
+        <button onclick="showForgotPassword()">
+          Forgot Password?
+        </button>
+
+        <div id="loginMessage" class="message"></div>
+      </div>
+
+
+      <div id="signupBox" class="card hidden">
+        <h2>Create Account</h2>
+
+        <input
+          type="email"
+          id="signupEmail"
+          placeholder="Email address"
+        >
+
+        <input
+          type="password"
+          id="signupPassword"
+          placeholder="Password"
+        >
+
+        <button onclick="signup()">Create Account</button>
+
+        <button onclick="showLogin()">
+          Back to Login
+        </button>
+
+        <div id="signupMessage" class="message"></div>
+      </div>
+
+
+      <div id="forgotBox" class="card hidden">
+        <h2>Reset Password</h2>
+
+        <input
+          type="email"
+          id="forgotEmail"
+          placeholder="Email address"
+        >
+
+        <button onclick="sendResetEmail()">
+          Send Reset Link
+        </button>
+
+        <button onclick="showLogin()">
+          Back to Login
+        </button>
+
+        <div id="forgotMessage" class="message"></div>
+      </div>
+
+
+      <div id="newPasswordBox" class="card hidden">
+        <h2>Create New Password</h2>
+
+        <input
+          type="password"
+          id="newPassword"
+          placeholder="New password"
+        >
+
+        <button onclick="updatePassword()">
+          Update Password
+        </button>
+
+        <div id="newPasswordMessage" class="message"></div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- DASHBOARD -->
+  <div id="dashboardSection" class="hidden">
+
+    <header>
+      <div class="container">
+        <h1>OrderMatch</h1>
+        <button class="logout" onclick="logout()">Logout</button>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <!-- WELCOME -->
+      <div class="card">
+        <h2>Welcome to OrderMatch</h2>
+
+        <p>
+          Account:
+          <strong id="userEmail"></strong>
+        </p>
+
+        <p>Balance</p>
+
+        <div class="balance">
+          KES 0.00
+        </div>
+
+        <div class="warning">
+          Real-money transactions are not enabled yet.
+        </div>
+      </div>
+
+
+      <!-- PROFILE -->
+      <div class="card">
+        <h2>My Profile</h2>
+
+        <input
+          type="text"
+          id="fullName"
+          placeholder="Full name"
+        >
+
+        <input
+          type="tel"
+          id="phone"
+          placeholder="Phone number"
+        >
+
+        <button onclick="saveProfile()">
+          Save Profile
+        </button>
+
+        <div id="profileMessage" class="message"></div>
+      </div>
+
+
+      <!-- TRANSACTION REQUESTS -->
+      <div class="card">
+        <h2>Account Transactions</h2>
+
+        <p class="small">
+          Submit a deposit or withdrawal request. These requests
+          do not move real money yet.
+        </p>
+
+        <input
+          type="number"
+          id="transactionAmount"
+          placeholder="Amount in KES"
+          min="1"
+          step="0.01"
+        >
+
+        <input
+          type="text"
+          id="transactionReference"
+          placeholder="Reference (optional)"
+        >
+
+        <button
+          class="deposit-btn"
+          onclick="requestTransaction('deposit')"
+        >
+          Deposit Request
+        </button>
+
+        <button
+          class="withdraw-btn"
+          onclick="requestTransaction('withdrawal')"
+        >
+          Withdrawal Request
+        </button>
+
+        <div class="clear"></div>
+
+        <div id="transactionMessage" class="message"></div>
+      </div>
+
+
+      <!-- TRANSACTION HISTORY -->
+      <div class="card">
+        <h2>Transaction History</h2>
+
+        <div id="transactionHistory">
+          Loading transactions...
+        </div>
+      </div>
+
+
+      <!-- AVAILABLE ORDERS -->
+      <div class="card">
+        <h2>Available Orders</h2>
+
+        <div id="ordersList">
+          Loading orders...
+        </div>
+      </div>
+
+
+      <!-- MATCHED ORDERS -->
+      <div class="card">
+        <h2>My Matched Orders</h2>
+
+        <div id="myOrdersList">
+          Loading matched orders...
+        </div>
+      </div>
+
+
+      <!-- ORDER HISTORY -->
+      <div class="card">
+        <h2>Order History</h2>
+
+        <div id="orderHistory">
+          Loading history...
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+<script>
+
+  // ==========================================
+  // SUPABASE CONFIGURATION
+  // ==========================================
+
+  const SUPABASE_URL =
+    "https://bdflurarenkcvcnttrya.supabase.co";
+
+  const SUPABASE_KEY =
+    "sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_KEY
+    );
+
+
+  // ==========================================
+  // AUTH SCREEN
+  // ==========================================
+
+  function showLogin() {
+    document.getElementById("loginBox").classList.remove("hidden");
+    document.getElementById("signupBox").classList.add("hidden");
+    document.getElementById("forgotBox").classList.add("hidden");
+    document.getElementById("newPasswordBox").classList.add("hidden");
+  }
+
+
+  function showSignup() {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("signupBox").classList.remove("hidden");
+    document.getElementById("forgotBox").classList.add("hidden");
+    document.getElementById("newPasswordBox").classList.add("hidden");
+  }
+
+
+  function showForgotPassword() {
+    document.getElementById("loginBox").classList.add("hidden");
+    document.getElementById("signupBox").classList.add("hidden");
+    document.getElementById("forgotBox").classList.remove("hidden");
+    document.getElementById("newPasswordBox").classList.add("hidden");
+  }
+
+
+  // ==========================================
+  // SIGNUP
+  // ==========================================
+
+  async function signup() {
+
+    const email =
+      document.getElementById("signupEmail").value.trim();
+
+    const password =
+      document.getElementById("signupPassword").value;
+
+    const message =
+      document.getElementById("signupMessage");
+
+    if (!email || !password) {
+      message.textContent = "Enter email and password.";
+      message.className = "message error";
+      return;
+    }
+
+    message.textContent = "Creating account...";
+    message.className = "message";
+
+
+    const { error } =
+      await supabaseClient.auth.signUp({
+        email,
+        password
+      });
+
+
+    if (error) {
+      message.textContent = error.message;
+      message.className = "message error";
+      return;
+    }
+
+
+    message.textContent =
+      "Account created. Check your email if confirmation is required.";
+
+    message.className = "message success";
+  }
+
+
+  // ==========================================
+  // LOGIN
+  // ==========================================
+
+  async function login() {
+
+    const email =
+      document.getElementById("loginEmail").value.trim();
+
+    const password =
+      document.getElementById("loginPassword").value;
+
+    const message =
+      document.getElementById("loginMessage");
+
+    if (!email || !password) {
+      message.textContent = "Enter email and password.";
+      message.className = "message error";
+      return;
+    }
+
+    message.textContent = "Logging in...";
+    message.className = "message";
+
+
+    const { data, error } =
+      await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+
+    if (error) {
+      message.textContent = error.message;
+      message.className = "message error";
+      return;
+    }
+
+
+    message.textContent = "";
+
+    showDashboard(data.user);
+  }
+
+
+  // ==========================================
+  // PASSWORD RESET
+  // ==========================================
+
+  async function sendResetEmail() {
+
+    const email =
+      document.getElementById("forgotEmail").value.trim();
+
+    const message =
+      document.getElementById("forgotMessage");
+
+    message.textContent = "Sending...";
+    message.className = "message";
+
+
+    const { error } =
+      await supabaseClient.auth.resetPasswordForEmail(
+        email,
+        {
+          redirectTo:
+            "https://nyangimanul-eng.github.io/order-matching-platform-/"
+        }
+      );
+
+
+    if (error) {
+      message.textContent = error.message;
+      message.className = "message error";
+      return;
+    }
+
+
+    message.textContent =
+      "Password reset link sent. Check your email.";
+
+    message.className = "message success";
+  }
+
+
+  async function updatePassword() {
+
+    const password =
+      document.getElementById("newPassword").value;
+
+    const message =
+      document.getElementById("newPasswordMessage");
+
+
+    const { error } =
+      await supabaseClient.auth.updateUser({
+        password
+      });
+
+
+    if (error) {
+      message.textContent = error.message;
+      message.className = "message error";
+      return;
+    }
+
+
+    message.textContent =
+      "Password updated successfully.";
+
+    message.className = "message success";
+  }
+
+
+  // ==========================================
+  // DASHBOARD
+  // ==========================================
+
+  async function showDashboard(user) {
+
+    document
+      .getElementById("authSection")
+      .classList.add("hidden");
+
+    document
+      .getElementById("dashboardSection")
+      .classList.remove("hidden");
+
+
+    document.getElementById("userEmail").textContent =
+      user.email;
+
+
+    await loadProfile(user);
+    await loadTransactions();
+    await loadOrders();
+    await loadMyOrders();
+    await loadOrderHistory();
+  }
+
+
+  // ==========================================
+  // PROFILE
+  // ==========================================
+
+  async function loadProfile(user) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("profiles")
+        .select("full_name, phone")
+        .eq("id", user.id)
+        .maybeSingle();
+
+
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+
+    if (data) {
+
+      document.getElementById("fullName").value =
+        data.full_name || "";
+
+      document.getElementById("phone").value =
+        data.phone || "";
+
+      return;
+    }
+
+
+    await supabaseClient
+      .from("profiles")
+      .insert({
+        id: user.id,
+        full_name: "",
+        phone: ""
+      });
+  }
+
+
+  async function saveProfile() {
+
+    const user =
+      (await supabaseClient.auth.getUser()).data.user;
+
+    if (!user) return;
+
+
+    const fullName =
+      document.getElementById("fullName").value.trim();
+
+    const phone =
+      document.getElementById("phone").value.trim();
+
+    const message =
+      document.getElementById("profileMessage");
+
+    message.textContent = "Saving...";
+    message.className = "message";
+
+
+    const { error } =
+      await supabaseClient
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          full_name: fullName,
+          phone
+        });
+
+
+    if (error) {
+
+      message.textContent = error.message;
+      message.className = "message error";
+
+      return;
+    }
+
+
+    message.textContent =
+      "Profile saved successfully.";
+
+    message.className = "message success";
+  }
+
+
+  // ==========================================
+  // TRANSACTIONS
+  // ==========================================
+
+  async function requestTransaction(type) {
+
+    const amount =
+      Number(
+        document.getElementById("transactionAmount").value
+      );
+
+    const reference =
+      document
+        .getElementById("transactionReference")
+        .value
+        .trim();
+
+    const message =
+      document.getElementById("transactionMessage");
+
+
+    if (!amount || amount <= 0) {
+
+      message.textContent =
+        "Enter a valid amount.";
+
+      message.className =
+        "message error";
+
+      return;
+    }
+
+
+    message.textContent =
+      "Submitting request...";
+
+    message.className =
+      "message";
+
+
+    const user =
+      (await supabaseClient.auth.getUser()).data.user;
+
+
+    if (!user) {
+
+      message.textContent =
+        "Please log in again.";
+
+      message.className =
+        "message error";
+
+      return;
+    }
+
+
+    const { error } =
+      await supabaseClient
+        .from("transactions")
+        .insert({
+          user_id: user.id,
+          type: type,
+          amount: amount,
+          reference: reference || null,
+          status: "pending"
+        });
+
+
+    if (error) {
+
+      message.textContent =
+        error.message;
+
+      message.className =
+        "message error";
+
+      return;
+    }
+
+
+    message.textContent =
+      type === "deposit"
+        ? "Deposit request submitted."
+        : "Withdrawal request submitted.";
+
+    message.className =
+      "message success";
+
+
+    document.getElementById(
+      "transactionAmount"
+    ).value = "";
+
+    document.getElementById(
+      "transactionReference"
+    ).value = "";
+
+
+    await loadTransactions();
+  }
+
+
+  async function loadTransactions() {
+
+    const history =
+      document.getElementById(
+        "transactionHistory"
+      );
+
+
+    const user =
+      (await supabaseClient.auth.getUser()).data.user;
+
+
+    if (!user) return;
+
+
+    const { data, error } =
+      await supabaseClient
+        .from("transactions")
+        .select(
+          "id, type, amount, status, reference, notes, created_at"
+        )
+        .eq("user_id", user.id)
+        .order("created_at", {
+          ascending: false
+        });
+
+
+    if (error) {
+
+      history.innerHTML =
+        '<p class="error">' +
+        escapeHtml(error.message) +
+        '</p>';
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      history.innerHTML =
+        "<p>No transactions yet.</p>";
+
+      return;
+    }
+
+
+    history.innerHTML = "";
+
+
+    data.forEach(transaction => {
+
+      const div =
+        document.createElement("div");
+
+      div.className =
+        "transaction";
+
+
+      const typeLabel =
+        transaction.type === "deposit"
+          ? "Deposit"
+          : "Withdrawal";
+
+
+      div.innerHTML = `
+        <strong>${typeLabel}</strong>
+
+        <p class="amount">
+          KES ${Number(transaction.amount).toLocaleString()}
+        </p>
+
+        <span class="status">
+          ${escapeHtml(transaction.status)}
+        </span>
+
+        ${
+          transaction.reference
+            ? `<p class="small">
+                 Reference:
+                 ${escapeHtml(transaction.reference)}
+               </p>`
+            : ""
+        }
+
+        <p class="small">
+          ${new Date(
+            transaction.created_at
+          ).toLocaleString()}
+        </p>
+      `;
+
+
+      history.appendChild(div);
+    });
+  }
+
+
+  // ==========================================
+  // AVAILABLE ORDERS
+  // ==========================================
+
+  async function loadOrders() {
+
+    const list =
+      document.getElementById("ordersList");
+
+
+    const { data, error } =
+      await supabaseClient
+        .from("orders")
+        .select(
+          "id, product_name, amount, status"
+        )
+        .eq("status", "available")
+        .order("id", {
+          ascending: false
+        });
+
+
+    if (error) {
+
+      list.innerHTML =
+        '<p class="error">' +
+        escapeHtml(error.message) +
+        '</p>';
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      list.innerHTML =
+        "<p>No available orders right now.</p>";
+
+      return;
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(order => {
+
+      const div =
+        document.createElement("div");
+
+      div.className = "order";
+
+
+      div.innerHTML = `
+        <h3>
+          ${escapeHtml(order.product_name)}
+        </h3>
+
+        <p class="amount">
+          KES ${Number(order.amount).toLocaleString()}
+        </p>
+
+        <span class="status">
+          Available
+        </span>
+
+        <br>
+
+        <button
+          class="match-btn"
+          onclick="matchOrder(${order.id})"
+        >
+          Match Order
+        </button>
+      `;
+
+
+      list.appendChild(div);
+    });
+  }
+
+
+  // ==========================================
+  // MATCH ORDER
+  // ==========================================
+
+  async function matchOrder(orderId) {
+
+    const confirmed =
+      confirm(
+        "Do you want to match this order?"
+      );
+
+
+    if (!confirmed) return;
+
+
+    const { error } =
+      await supabaseClient.rpc(
+        "match_order",
+        {
+          p_order_id: orderId
+        }
+      );
+
+
+    if (error) {
+
+      alert(error.message);
+
+      return;
+    }
+
+
+    alert(
+      "Order matched successfully!"
+    );
+
+
+    await loadOrders();
+    await loadMyOrders();
+    await loadOrderHistory();
+  }
+
+
+  // ==========================================
+  // MY MATCHED ORDERS
+  // ==========================================
+
+  async function loadMyOrders() {
+
+    const list =
+      document.getElementById(
+        "myOrdersList"
+      );
+
+
+    const user =
+      (await supabaseClient.auth.getUser()).data.user;
+
+
+    if (!user) return;
+
+
+    const { data, error } =
+      await supabaseClient
+        .from("order_matches")
+        .select(`
+          id,
+          order_id,
+          matched_at,
+          orders (
+            product_name,
+            amount,
+            status
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("matched_at", {
+          ascending: false
+        });
+
+
+    if (error) {
+
+      list.innerHTML =
+        '<p class="error">' +
+        escapeHtml(error.message) +
+        '</p>';
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      list.innerHTML =
+        "<p>You have not matched any orders yet.</p>";
+
+      return;
+    }
+
+
+    list.innerHTML = "";
+
+
+    data.forEach(match => {
+
+      const order =
+        match.orders;
+
+
+      if (!order) return;
+
+
+      const div =
+        document.createElement("div");
+
+      div.className = "order";
+
+
+      div.innerHTML = `
+        <h3>
+          ${escapeHtml(order.product_name)}
+        </h3>
+
+        <p class="amount">
+          KES ${Number(order.amount).toLocaleString()}
+        </p>
+
+        <span class="status">
+          ${escapeHtml(order.status)}
+        </span>
+
+        <p class="small">
+          Matched:
+          ${new Date(
+            match.matched_at
+          ).toLocaleString()}
+        </p>
+      `;
+
+
+      list.appendChild(div);
+    });
+  }
+
+
+  // ==========================================
+  // ORDER HISTORY
+  // ==========================================
+
+  async function loadOrderHistory() {
+
+    const history =
+      document.getElementById(
+        "orderHistory"
+      );
+
+
+    const user =
+      (await supabaseClient.auth.getUser()).data.user;
+
+
+    if (!user) return;
+
+
+    const { data, error } =
+      await supabaseClient
+        .from("order_matches")
+        .select(`
+          id,
+          order_id,
+          matched_at,
+          orders (
+            product_name,
+            amount,
+            status
+          )
+        `)
+        .eq("user_id", user.id)
+        .order("matched_at", {
+          ascending: false
+        });
+
+
+    if (error) {
+
+      history.innerHTML =
+        '<p class="error">' +
+        escapeHtml(error.message) +
+        '</p>';
+
+      return;
+    }
+
+
+    if (!data || data.length === 0) {
+
+      history.innerHTML =
+        "<p>No order history yet.</p>";
+
+      return;
+    }
+
+
+    history.innerHTML = "";
+
+
+    data.forEach(match => {
+
+      const order =
+        match.orders;
+
+
+      if (!order) return;
+
+
+      const div =
+        document.createElement("div");
+
+      div.className =
+        "history-row";
+
+
+      div.innerHTML = `
+        <strong>
+          ${escapeHtml(order.product_name)}
+        </strong>
+
+        <br>
+
+        KES ${Number(order.amount).toLocaleString()}
+
+        <br>
+
+        <span class="small">
+          Order ID: ${match.order_id}
+        </span>
+
+        <br>
+
+        <span class="small">
+          Matched:
+          ${new Date(
+            match.matched_at
+          ).toLocaleString()}
+        </span>
+
+        <br>
+
+        <span class="status">
+          ${escapeHtml(order.status)}
+        </span>
+      `;
+
+
+      history.appendChild(div);
+    });
+  }
+
+
+  // ==========================================
+  // LOGOUT
+  // ==========================================
+
+  async function logout() {
+
+    await supabaseClient.auth.signOut();
+
+
+    document
+      .getElementById("dashboardSection")
+      .classList.add("hidden");
+
+
+    document
+      .getElementById("authSection")
+      .classList.remove("hidden");
+
+
+    showLogin();
+  }
+
+
+  // ==========================================
+  // ESCAPE HTML
+  // ==========================================
+
+  function escapeHtml(value) {
+
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+
+  // ==========================================
+  // CHECK SESSION
+  // ==========================================
+
+  async function checkSession() {
+
+    const {
+      data: { session }
+    } =
+      await supabaseClient.auth.getSession();
+
+
+    if (
+      session &&
+      session.user
+    ) {
+
+      await showDashboard(
+        session.user
+      );
+
+    } else {
+
+      showLogin();
+    }
+  }
+
+
+  // ==========================================
+  // AUTH STATE
+  // ==========================================
+
+  supabaseClient.auth.onAuthStateChange(
+    async (event, session) => {
+
+      if (
+        session &&
+        session.user &&
+        event === "SIGNED_IN"
+      ) {
+
+        await showDashboard(
+          session.user
+        );
+      }
+    }
+  );
+
+
+  // ==========================================
+  // START
+  // ==========================================
+
+  checkSession();
+
+</script>
+
+</body>
+</html>
