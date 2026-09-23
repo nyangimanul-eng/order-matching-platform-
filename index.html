@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OrderMatch</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+    }
+
+    header {
+      background: #0b5cff;
+      color: white;
+      padding: 22px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+    }
+
+    .container {
+      max-width: 500px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px;
+      margin: 8px 0 14px;
+      border: 1px solid #ccd3df;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 8px;
+      background: #0b5cff;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 5px;
+    }
+
+    button.secondary {
+      background: #eef2f7;
+      color: #172033;
+    }
+
+    button.match {
+      background: #16a34a;
+      margin-top: 12px;
+    }
+
+    .link {
+      color: #0b5cff;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .message {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #eef5ff;
+    }
+
+    .dashboard-box {
+      padding: 18px;
+      background: #f4f7fb;
+      border-radius: 10px;
+      margin: 12px 0;
+    }
+
+    .order {
+      background: white;
+      border: 1px solid #dce2ea;
+      border-radius: 12px;
+      padding: 16px;
+      margin: 12px 0;
+    }
+
+    .order h3 {
+      margin: 0 0 8px;
+    }
+
+    .amount {
+      font-size: 20px;
+      font-weight: bold;
+      margin: 8px 0;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 13px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 20px;
+      color: #667085;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>OrderMatch</h1>
+  <p>Smart Order Matching</p>
+</header>
+
+<div class="container">
+
+  <!-- AUTH -->
+  <div id="authCard" class="card">
+
+    <div id="signupSection">
+      <h2>Create Account</h2>
+      <p>Manage your account and available orders securely.</p>
+
+      <input id="name" type="text" placeholder="Full name">
+      <input id="signupEmail" type="email" placeholder="Email address">
+      <input id="signupPassword" type="password" placeholder="Password">
+
+      <button onclick="signUp()">Create Account</button>
+
+      <div class="link" onclick="showLogin()">
+        I already have an account
+      </div>
+    </div>
+
+    <div id="loginSection" class="hidden">
+      <h2>Login</h2>
+
+      <input id="loginEmail" type="email" placeholder="Email address">
+      <input id="loginPassword" type="password" placeholder="Password">
+
+      <button onclick="login()">Login</button>
+
+      <div class="link" onclick="showForgotPassword()">
+        Forgot password?
+      </div>
+
+      <div class="link" onclick="showSignup()">
+        Create a new account
+      </div>
+    </div>
+
+    <div id="forgotSection" class="hidden">
+      <h2>Reset Password</h2>
+
+      <p>Enter your email and we'll send you a password reset link.</p>
+
+      <input id="resetEmail" type="email" placeholder="Email address">
+
+      <button onclick="sendResetEmail()">Send Reset Link</button>
+
+      <div class="link" onclick="showLogin()">Back to Login</div>
+    </div>
+
+    <div id="newPasswordSection" class="hidden">
+      <h2>Create New Password</h2>
+
+      <input id="newPassword" type="password" placeholder="New password">
+      <input id="confirmPassword" type="password" placeholder="Confirm new password">
+
+      <button onclick="updatePassword()">Update Password</button>
+    </div>
+
+    <div id="message" class="message hidden"></div>
+
+  </div>
+
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="hidden">
+
+    <div class="card">
+
+      <h2>Welcome to OrderMatch</h2>
+
+      <div class="dashboard-box">
+        <strong>Account</strong>
+        <p id="userEmail"></p>
+      </div>
+
+      <div class="dashboard-box">
+        <strong>Balance</strong>
+        <h2>KES 0.00</h2>
+        <p>Real-money transactions are not enabled yet.</p>
+      </div>
+
+    </div>
+
+
+    <!-- AVAILABLE ORDERS -->
+    <div class="card">
+
+      <h2>Available Orders</h2>
+
+      <p>Select an order to match.</p>
+
+      <div id="ordersList">
+        <div class="empty">Loading orders...</div>
+      </div>
+
+    </div>
+
+
+    <!-- MY ORDERS -->
+    <div class="card">
+
+      <h2>My Matched Orders</h2>
+
+      <div id="myOrders">
+        <div class="empty">
+          You haven't matched any orders yet.
+        </div>
+      </div>
+
+    </div>
+
+
+    <div class="card">
+      <button class="secondary" onclick="logout()">Logout</button>
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+const SUPABASE_URL =
+  "https://bdflurarenkcvcnttrya.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+const SITE_URL =
+  "https://nyangimanul-eng.github.io/order-matching-platform-/";
+
+const supabaseClient =
+  supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+const authCard = document.getElementById("authCard");
+const dashboard = document.getElementById("dashboard");
+
+const signupSection = document.getElementById("signupSection");
+const loginSection = document.getElementById("loginSection");
+const forgotSection = document.getElementById("forgotSection");
+const newPasswordSection =
+  document.getElementById("newPasswordSection");
+
+const message = document.getElementById("message");
+const ordersList = document.getElementById("ordersList");
+const myOrders = document.getElementById("myOrders");
+
+
+function showSignup() {
+  signupSection.classList.remove("hidden");
+  loginSection.classList.add("hidden");
+  forgotSection.classList.add("hidden");
+  newPasswordSection.classList.add("hidden");
+  hideMessage();
+}
+
+
+function showLogin() {
+  signupSection.classList.add("hidden");
+  loginSection.classList.remove("hidden");
+  forgotSection.classList.add("hidden");
+  newPasswordSection.classList.add("hidden");
+  hideMessage();
+}
+
+
+function showForgotPassword() {
+  signupSection.classList.add("hidden");
+  loginSection.classList.add("hidden");
+  forgotSection.classList.remove("hidden");
+  newPasswordSection.classList.add("hidden");
+  hideMessage();
+}
+
+
+function showNewPassword() {
+  signupSection.classList.add("hidden");
+  loginSection.classList.add("hidden");
+  forgotSection.classList.add("hidden");
+  newPasswordSection.classList.remove("hidden");
+}
+
+
+function showMessage(text) {
+  message.textContent = text;
+  message.classList.remove("hidden");
+}
+
+
+function hideMessage() {
+  message.classList.add("hidden");
+}
+
+
+async function signUp() {
+
+  const name =
+    document.getElementById("name").value.trim();
+
+  const email =
+    document.getElementById("signupEmail").value.trim();
+
+  const password =
+    document.getElementById("signupPassword").value;
+
+  if (!name || !email || !password) {
+    showMessage("Please fill in all fields.");
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name
+        }
+      }
+    });
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  if (data.session) {
+    showDashboard(data.session.user);
+  } else {
+    showMessage(
+      "Account created. Please check your email and confirm your account."
+    );
+  }
+}
+
+
+async function login() {
+
+  const email =
+    document.getElementById("loginEmail").value.trim();
+
+  const password =
+    document.getElementById("loginPassword").value;
+
+  if (!email || !password) {
+    showMessage("Please enter your email and password.");
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  showDashboard(data.user);
+}
+
+
+async function sendResetEmail() {
+
+  const email =
+    document.getElementById("resetEmail").value.trim();
+
+  if (!email) {
+    showMessage("Please enter your email address.");
+    return;
+  }
+
+  const { error } =
+    await supabaseClient.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: SITE_URL
+      }
+    );
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  showMessage(
+    "Password reset email sent. Check your inbox and Spam/Junk folder."
+  );
+}
+
+
+async function updatePassword() {
+
+  const password =
+    document.getElementById("newPassword").value;
+
+  const confirm =
+    document.getElementById("confirmPassword").value;
+
+  if (!password || !confirm) {
+    showMessage("Please fill in both password fields.");
+    return;
+  }
+
+  if (password !== confirm) {
+    showMessage("Passwords do not match.");
+    return;
+  }
+
+  const { error } =
+    await supabaseClient.auth.updateUser({
+      password
+    });
+
+  if (error) {
+    showMessage(error.message);
+    return;
+  }
+
+  showMessage("Password updated successfully.");
+
+  setTimeout(() => {
+    showLogin();
+  }, 1500);
+}
+
+
+function showDashboard(user) {
+
+  authCard.classList.add("hidden");
+  dashboard.classList.remove("hidden");
+
+  document.getElementById("userEmail").textContent =
+    user.email;
+
+  loadOrders();
+}
+
+
+async function loadOrders() {
+
+  ordersList.innerHTML =
+    '<div class="empty">Loading orders...</div>';
+
+  const { data, error } =
+    await supabaseClient
+      .from("orders")
+      .select("*")
+      .eq("status", "available")
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+
+    ordersList.innerHTML =
+      '<div class="empty">Unable to load orders.</div>';
+
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+
+    ordersList.innerHTML =
+      '<div class="empty">No orders available.</div>';
+
+    return;
+  }
+
+  ordersList.innerHTML = "";
+
+  data.forEach(order => {
+
+    const orderDiv =
+      document.createElement("div");
+
+    orderDiv.className = "order";
+
+    orderDiv.innerHTML = `
+      <h3>${escapeHtml(order.product_name)}</h3>
+
+      <div class="amount">
+        KES ${Number(order.amount).toLocaleString()}
+      </div>
+
+      <span class="status">
+        ${escapeHtml(order.status)}
+      </span>
+
+      <button class="match"
+        onclick="matchOrder(${order.id})">
+        Match Order
+      </button>
+    `;
+
+    ordersList.appendChild(orderDiv);
+  });
+}
+
+
+async function matchOrder(orderId) {
+
+  const confirmed =
+    confirm("Do you want to match this order?");
+
+  if (!confirmed) {
+    return;
+  }
+
+  const { data, error } =
+    await supabaseClient
+      .from("orders")
+      .update({
+        status: "matched"
+      })
+      .eq("id", orderId)
+      .eq("status", "available")
+      .select();
+
+  if (error) {
+    alert("Unable to match this order.");
+    console.error(error);
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    alert("This order is no longer available.");
+    loadOrders();
+    return;
+  }
+
+  alert("Order matched successfully!");
+
+  loadOrders();
+  loadMyOrders();
+}
+
+
+async function loadMyOrders() {
+
+  myOrders.innerHTML =
+    '<div class="empty">Loading...</div>';
+
+  const { data, error } =
+    await supabaseClient
+      .from("orders")
+      .select("*")
+      .eq("status", "matched")
+      .order("created_at", {
+        ascending: false
+      });
+
+  if (error) {
+    myOrders.innerHTML =
+      '<div class="empty">Unable to load matched orders.</div>';
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    myOrders.innerHTML =
+      '<div class="empty">You haven\'t matched any orders yet.</div>';
+    return;
+  }
+
+  myOrders.innerHTML = "";
+
+  data.forEach(order => {
+
+    const orderDiv =
+      document.createElement("div");
+
+    orderDiv.className = "order";
+
+    orderDiv.innerHTML = `
+      <h3>${escapeHtml(order.product_name)}</h3>
+
+      <div class="amount">
+        KES ${Number(order.amount).toLocaleString()}
+      </div>
+
+      <span class="status">
+        Matched
+      </span>
+    `;
+
+    myOrders.appendChild(orderDiv);
+  });
+}
+
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+
+async function logout() {
+
+  await supabaseClient.auth.signOut();
+
+  dashboard.classList.add("hidden");
+  authCard.classList.remove("hidden");
+
+  showLogin();
+}
+
+
+async function checkSession() {
+
+  const { data } =
+    await supabaseClient.auth.getSession();
+
+  if (data.session) {
+    showDashboard(data.session.user);
+    loadMyOrders();
+  }
+
+  supabaseClient.auth.onAuthStateChange(
+    async (event, session) => {
+
+      if (event === "PASSWORD_RECOVERY") {
+        showNewPassword();
+      }
+
+      if (event === "SIGNED_IN" && session) {
+        showDashboard(session.user);
+        loadMyOrders();
+      }
+
+      if (event === "SIGNED_OUT") {
+
+        dashboard.classList.add("hidden");
+        authCard.classList.remove("hidden");
+
+        showLogin();
+      }
+    }
+  );
+}
+
+
+checkSession();
+
+</script>
+
+</body>
+</html>
