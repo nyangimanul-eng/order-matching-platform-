@@ -1,1 +1,3295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OrderMatch</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<style>
+*{box-sizing:border-box}
+:root{
+ --p:#2563eb;--pd:#1d4ed8;--g:#16a34a;--r:#dc2626;
+ --d:#111827;--m:#6b7280;--b:#e5e7eb;--bg:#f3f4f6
+}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--d)}
+button,input{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+.auth-page{
+ min-height:100vh;display:flex;align-items:center;justify-content:center;
+ padding:20px;background:linear-gradient(135deg,#eff6ff,#f8fafc)
+}
+.auth-card{
+ width:100%;max-width:460px;background:#fff;border-radius:22px;
+ padding:28px;box-shadow:0 20px 60px #0f172a1f
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:24px;color:var(--p)}
+.brand-icon{
+ width:44px;height:44px;border-radius:14px;background:var(--p);color:#fff;
+ display:flex;align-items:center;justify-content:center;font-weight:900
+}
+.auth-title{margin:28px 0 8px;font-size:28px}
+.auth-subtitle{color:var(--m);margin-bottom:24px;line-height:1.5}
+.form-group{margin-bottom:15px}
+.form-group label{display:block;font-weight:700;margin-bottom:7px;font-size:14px}
+input{
+ width:100%;border:1px solid var(--b);border-radius:11px;
+ padding:12px 13px;outline:none;background:#fff
+}
+input:focus{border-color:var(--p);box-shadow:0 0 0 3px #2563eb1a}
+
+.primary-btn,.secondary-btn,.danger-btn,.success-btn{
+ border:0;border-radius:11px;padding:12px 16px;font-weight:700
+}
+.primary-btn{background:var(--p);color:#fff}
+.primary-btn:hover{background:var(--pd)}
+.secondary-btn{background:#eef2ff;color:#3730a3}
+.success-btn{background:#dcfce7;color:#166534}
+.danger-btn{background:#fee2e2;color:#991b1b}
+button:disabled{opacity:.55;cursor:not-allowed}
+.full-btn{width:100%}
+
+.auth-switch{text-align:center;color:var(--m);font-size:14px;margin-top:18px}
+.link-btn{background:none;border:0;color:var(--p);font-weight:700;padding:0}
+
+.message{border-radius:10px;padding:11px 13px;margin-bottom:15px;font-size:14px;line-height:1.4}
+.message.success{background:#dcfce7;color:#166534}
+.message.error{background:#fee2e2;color:#991b1b}
+.message.info{background:#dbeafe;color:#1e40af}
+
+.topbar{background:#fff;border-bottom:1px solid var(--b);position:sticky;top:0;z-index:20}
+.topbar-inner{
+ max-width:1200px;margin:auto;min-height:70px;padding:12px 18px;
+ display:flex;align-items:center;justify-content:space-between;gap:15px
+}
+.account-area{display:flex;align-items:center;gap:9px}
+.account-email{
+ color:var(--m);font-size:13px;max-width:220px;
+ overflow:hidden;text-overflow:ellipsis;white-space:nowrap
+}
+.top-actions{display:flex;gap:8px}
+.top-actions button{
+ padding:9px 12px;border-radius:9px;border:1px solid var(--b);
+ background:#fff;font-weight:700
+}
+.top-actions .admin-btn{background:#111827;color:#fff}
+
+.main{max-width:1200px;margin:auto;padding:20px}
+.welcome{
+ background:linear-gradient(135deg,#1d4ed8,#2563eb);
+ color:#fff;border-radius:20px;padding:24px;margin-bottom:18px
+}
+.welcome h1{margin:0 0 7px;font-size:28px}
+.welcome p{margin:0;opacity:.9}
+.balance-box{
+ margin-top:20px;background:#ffffff24;border:1px solid #ffffff33;
+ border-radius:15px;padding:16px;max-width:360px
+}
+.balance-label{font-size:13px;opacity:.85}
+.balance-value{font-size:30px;font-weight:800;margin-top:5px}
+
+.quick-nav{
+ display:flex;gap:8px;overflow-x:auto;padding:3px 0 16px;scrollbar-width:none
+}
+.quick-nav::-webkit-scrollbar{display:none}
+.quick-nav button{
+ white-space:nowrap;border:1px solid var(--b);background:#fff;
+ padding:10px 13px;border-radius:10px;font-weight:700;color:#374151
+}
+
+.summary-grid{
+ display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px
+}
+.summary-card{
+ background:#fff;border:1px solid var(--b);border-radius:15px;padding:17px
+}
+.summary-label{color:var(--m);font-size:13px}
+.summary-value{font-size:24px;font-weight:800;margin-top:6px}
+
+.section-card{
+ background:#fff;border:1px solid var(--b);border-radius:17px;
+ padding:20px;margin-bottom:18px;scroll-margin-top:90px
+}
+.section-header{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;margin-bottom:16px
+}
+.section-header h2{margin:0;font-size:20px}
+.section-header p{margin:4px 0 0;color:var(--m);font-size:13px}
+
+.form-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.form-actions{display:flex;gap:9px;flex-wrap:wrap}
+
+.table-wrap{overflow-x:auto;border:1px solid var(--b);border-radius:12px}
+table{width:100%;border-collapse:collapse;min-width:650px}
+th,td{
+ padding:12px;border-bottom:1px solid var(--b);
+ text-align:left;font-size:13px;white-space:nowrap
+}
+th{background:#f9fafb;color:#4b5563;font-weight:800}
+tr:last-child td{border-bottom:0}
+
+.empty{padding:24px;text-align:center;color:var(--m);background:#f9fafb;border-radius:12px}
+
+.status{
+ display:inline-flex;border-radius:999px;padding:5px 9px;
+ font-size:11px;font-weight:800;text-transform:capitalize
+}
+.status.available{background:#dcfce7;color:#166534}
+.status.pending{background:#fef3c7;color:#92400e}
+.status.completed,.status.approved,.status.matched{
+ background:#dbeafe;color:#1e40af
+}
+.status.rejected,.status.failed,.status.cancelled{
+ background:#fee2e2;color:#991b1b
+}
+
+.order-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.order-card{
+ border:1px solid var(--b);border-radius:14px;padding:16px;background:#fff
+}
+.order-card h3{margin:0 0 7px;font-size:17px}
+.order-amount{font-size:23px;font-weight:800;margin:10px 0 15px}
+
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.profile-info{background:#f9fafb;border-radius:12px;padding:14px}
+.profile-info small{display:block;color:var(--m);margin-bottom:5px}
+.profile-info strong{word-break:break-word}
+
+.admin-section{border:2px solid #111827}
+.admin-title{color:#111827}
+.admin-stats{
+ display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px
+}
+.admin-stat{padding:15px;background:#f9fafb;border-radius:12px}
+.admin-stat small{color:var(--m)}
+.admin-stat strong{display:block;font-size:23px;margin-top:5px}
+
+.search-box{margin-bottom:14px}
+.loader{
+ display:inline-block;width:16px;height:16px;border:2px solid currentColor;
+ border-right-color:transparent;border-radius:50%;
+ animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.footer{text-align:center;color:var(--m);padding:25px 10px 35px;font-size:13px}
+
+/* CUSTOMER DETAILS */
+.customer-modal{
+ position:fixed;inset:0;background:#11182799;
+ display:flex;align-items:center;justify-content:center;
+ padding:18px;z-index:100
+}
+.customer-modal-card{
+ width:100%;max-width:600px;background:#fff;border-radius:18px;
+ padding:20px;box-shadow:0 20px 60px #0003;max-height:90vh;overflow:auto
+}
+.customer-detail-grid{
+ display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px
+}
+.customer-detail{
+ background:#f9fafb;border-radius:12px;padding:13px
+}
+.customer-detail small{display:block;color:var(--m);margin-bottom:5px}
+.customer-detail strong{word-break:break-word}
+
+@media(max-width:850px){
+ .summary-grid{grid-template-columns:repeat(2,1fr)}
+ .order-grid{grid-template-columns:repeat(2,1fr)}
+ .admin-stats{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:650px){
+ .topbar-inner{align-items:flex-start}
+ .topbar .brand{font-size:19px}
+ .brand-icon{width:37px;height:37px;border-radius:11px}
+ .account-email{display:none}
+ .top-actions button{padding:8px 9px;font-size:12px}
+ .main{padding:12px}
+ .welcome{border-radius:16px;padding:18px}
+ .welcome h1{font-size:23px}
+ .balance-value{font-size:27px}
+ .summary-grid{gap:9px}
+ .summary-card{padding:13px}
+ .summary-value{font-size:21px}
+ .section-card{padding:15px;border-radius:14px}
+ .form-grid,.profile-grid,.customer-detail-grid{grid-template-columns:1fr}
+ .order-grid{grid-template-columns:1fr}
+ .admin-stats{grid-template-columns:1fr}
+ .form-actions{flex-direction:column}
+ .form-actions button{width:100%}
+ .auth-card{padding:21px;border-radius:18px}
+}
+</style>
+</head>
+
+<body>
+
+<div id="authPage" class="auth-page">
+<div class="auth-card">
+
+<div class="brand">
+ <div class="brand-icon">OM</div>
+ <span>OrderMatch</span>
+</div>
+
+<div id="loginView">
+<h1 class="auth-title">Welcome back</h1>
+<p class="auth-subtitle">Sign in to manage your orders, balance and account.</p>
+<div id="loginMessage"></div>
+
+<form id="loginForm">
+<div class="form-group">
+<label>Email address</label>
+<input id="loginEmail" type="email" placeholder="you@example.com" required>
+</div>
+
+<div class="form-group">
+<label>Password</label>
+<input id="loginPassword" type="password" placeholder="Your password" required>
+</div>
+
+<button id="loginButton" class="primary-btn full-btn">Sign In</button>
+</form>
+
+<div class="auth-switch">
+Don't have an account?
+<button id="showSignup" class="link-btn" type="button">Create account</button>
+</div>
+
+<div class="auth-switch">
+<button id="showReset" class="link-btn" type="button">Forgot password?</button>
+</div>
+</div>
+
+<div id="signupView" class="hidden">
+<h1 class="auth-title">Create your account</h1>
+<p class="auth-subtitle">Create your OrderMatch customer account.</p>
+<div id="signupMessage"></div>
+
+<form id="signupForm">
+<div class="form-group">
+<label>Full name</label>
+<input id="signupName" type="text" placeholder="Your full name" required>
+</div>
+
+<div class="form-group">
+<label>M-Pesa phone number</label>
+<input id="signupPhone" type="tel" placeholder="0700000000" required>
+</div>
+
+<div class="form-group">
+<label>Email address</label>
+<input id="signupEmail" type="email" placeholder="you@example.com" required>
+</div>
+
+<div class="form-group">
+<label>Password</label>
+<input id="signupPassword" type="password" minlength="6" required>
+</div>
+
+<div class="form-group">
+<label>Confirm password</label>
+<input id="signupConfirm" type="password" minlength="6" required>
+</div>
+
+<button id="signupButton" class="primary-btn full-btn">Create Account</button>
+</form>
+
+<div class="auth-switch">
+Already have an account?
+<button id="showLogin" class="link-btn" type="button">Sign in</button>
+</div>
+</div>
+
+<div id="resetView" class="hidden">
+<h1 class="auth-title">Reset password</h1>
+<p class="auth-subtitle">Enter your email and we'll send a password reset link.</p>
+<div id="resetMessage"></div>
+
+<form id="resetForm">
+<div class="form-group">
+<label>Email address</label>
+<input id="resetEmail" type="email" required>
+</div>
+
+<button class="primary-btn full-btn">Send Reset Link</button>
+</form>
+
+<div class="auth-switch">
+<button id="resetBack" class="link-btn" type="button">Back to sign in</button>
+</div>
+</div>
+
+</div>
+</div>
+
+<div id="application" class="app hidden">
+
+<header class="topbar">
+<div class="topbar-inner">
+
+<div class="brand">
+<div class="brand-icon">OM</div>
+<span>OrderMatch</span>
+</div>
+
+<div class="account-area">
+<span id="accountEmail" class="account-email"></span>
+
+<div class="top-actions">
+<button id="adminOpenButton" class="admin-btn hidden" type="button">Admin</button>
+<button id="logoutButton" type="button">Logout</button>
+</div>
+</div>
+
+</div>
+</header>
+
+<main class="main">
+
+<section class="welcome">
+<h1>Hello, <span id="welcomeName">Customer</span></h1>
+<p>Manage your OrderMatch account and orders from one place.</p>
+
+<div class="balance-box">
+<div class="balance-label">Available Balance</div>
+<div class="balance-value">
+KES <span id="balance">0.00</span>
+</div>
+</div>
+</section>
+
+<div class="quick-nav">
+<button onclick="scrollToSection('profileSection')">Profile</button>
+<button onclick="scrollToSection('depositSection')">Deposit</button>
+<button onclick="scrollToSection('withdrawSection')">Withdraw</button>
+<button onclick="scrollToSection('ordersSection')">Orders</button>
+<button onclick="scrollToSection('historySection')">History</button>
+</div>
+
+<div class="summary-grid">
+<div class="summary-card">
+<div class="summary-label">Balance</div>
+<div class="summary-value">KES <span id="summaryBalance">0</span></div>
+</div>
+
+<div class="summary-card">
+<div class="summary-label">Available Orders</div>
+<div id="availableCount" class="summary-value">0</div>
+</div>
+
+<div class="summary-card">
+<div class="summary-label">My Matches</div>
+<div id="matchedCount" class="summary-value">0</div>
+</div>
+
+<div class="summary-card">
+<div class="summary-label">Pending Transactions</div>
+<div id="pendingCount" class="summary-value">0</div>
+</div>
+</div>
+
+<section id="profileSection" class="section-card">
+<div class="section-header">
+<div>
+<h2>My Profile</h2>
+<p>Keep your customer information up to date.</p>
+</div>
+</div>
+
+<div id="profileMessage"></div>
+
+<div class="profile-grid">
+<div class="profile-info">
+<small>Email</small>
+<strong id="profileEmail">—</strong>
+</div>
+
+<div class="profile-info">
+<small>Account ID</small>
+<strong id="profileId">—</strong>
+</div>
+</div>
+
+<br>
+
+<form id="profileForm">
+<div class="form-grid">
+
+<div class="form-group">
+<label>Full name</label>
+<input id="profileName" required>
+</div>
+
+<div class="form-group">
+<label>M-Pesa phone number</label>
+<input id="profilePhone" type="tel" placeholder="0700000000" required>
+</div>
+
+</div>
+
+<button id="saveProfileButton" class="primary-btn">Save Profile</button>
+</form>
+</section>
+
+<section id="depositSection" class="section-card">
+<div class="section-header">
+<div>
+<h2>Deposit with M-Pesa</h2>
+<p>Request an M-Pesa STK Push to fund your account.</p>
+</div>
+</div>
+
+<div id="depositMessage"></div>
+
+<form id="depositForm">
+<div class="form-grid">
+
+<div class="form-group">
+<label>M-Pesa phone</label>
+<input id="depositPhone" type="tel" required>
+</div>
+
+<div class="form-group">
+<label>Amount (KES)</label>
+<input id="depositAmount" type="number" min="1" step="1" placeholder="10" required>
+</div>
+
+</div>
+
+<button id="depositButton" class="primary-btn">Deposit with M-Pesa</button>
+</form>
+</section>
+
+<section id="withdrawSection" class="section-card">
+<div class="section-header">
+<div>
+<h2>Withdraw</h2>
+<p>Submit a withdrawal request for admin processing.</p>
+</div>
+</div>
+
+<div id="withdrawMessage"></div>
+
+<form id="withdrawForm">
+<div class="form-grid">
+
+<div class="form-group">
+<label>M-Pesa phone</label>
+<input id="withdrawPhone" type="tel" required>
+</div>
+
+<div class="form-group">
+<label>Amount (KES)</label>
+<input id="withdrawAmount" type="number" min="1" step="1" placeholder="10" required>
+</div>
+
+</div>
+
+<button id="withdrawButton" class="primary-btn">Request Withdrawal</button>
+</form>
+</section>
+
+<section id="ordersSection" class="section-card">
+<div class="section-header">
+<div>
+<h2>Available Orders</h2>
+<p>Choose an available order to match with your account.</p>
+</div>
+
+<button id="refreshOrdersButton" class="secondary-btn">Refresh</button>
+</div>
+
+<div id="ordersMessage"></div>
+<div id="availableOrders" class="order-grid">
+<div class="empty">Loading orders...</div>
+</div>
+</section>
+
+<section class="section-card">
+<div class="section-header">
+<div>
+<h2>My Matched Orders</h2>
+<p>Orders currently matched to your account.</p>
+</div>
+</div>
+
+<div id="matchedOrders" class="order-grid">
+<div class="empty">Loading...</div>
+</div>
+</section>
+
+<section id="historySection" class="section-card">
+<div class="section-header">
+<div>
+<h2>Transaction History</h2>
+<p>Your deposits and withdrawals.</p>
+</div>
+</div>
+
+<div id="transactionsTable">
+<div class="empty">Loading...</div>
+</div>
+</section>
+
+<section class="section-card">
+<div class="section-header">
+<div>
+<h2>Balance History</h2>
+<p>Changes made to your wallet balance.</p>
+</div>
+</div>
+
+<div id="balanceHistoryTable">
+<div class="empty">Loading...</div>
+</div>
+</section>
+
+<section class="section-card">
+<div class="section-header">
+<div>
+<h2>Order History</h2>
+<p>Your matched and completed orders.</p>
+</div>
+</div>
+
+<div id="orderHistoryTable">
+<div class="empty">Loading...</div>
+</div>
+</section>
+
+<!-- ADMIN -->
+
+<section id="adminSection" class="section-card admin-section hidden">
+
+<div class="section-header">
+<div>
+<h2 class="admin-title">Admin Dashboard</h2>
+<p>Manage customers, orders and transaction requests.</p>
+</div>
+
+<button id="adminCloseButton" class="danger-btn">Close</button>
+</div>
+
+<div class="admin-stats">
+
+<div class="admin-stat">
+<small>Total Customers</small>
+<strong id="adminTotalCustomers">0</strong>
+</div>
+
+<div class="admin-stat">
+<small>Total Orders</small>
+<strong id="adminTotalOrders">0</strong>
+</div>
+
+<div class="admin-stat">
+<small>Pending Transactions</small>
+<strong id="adminPendingTransactions">0</strong>
+</div>
+
+<div class="admin-stat">
+<small>M-Pesa Payments</small>
+<strong id="adminMpesaPayments">0</strong>
+</div>
+
+</div>
+
+<!-- CUSTOMER MANAGEMENT -->
+
+<div class="section-card">
+
+<div class="section-header">
+<div>
+<h2>Customer Management</h2>
+<p>View registered customers and their account balances.</p>
+</div>
+
+<button id="refreshCustomersButton" class="secondary-btn">Refresh</button>
+</div>
+
+<div class="search-box">
+<input id="customerSearch" type="search" placeholder="Search by name, email or phone...">
+</div>
+
+<div id="adminCustomersTable">
+<div class="empty">Loading customers...</div>
+</div>
+
+</div>
+
+<!-- CREATE ORDER -->
+
+<div class="section-card">
+
+<div class="section-header">
+<div>
+<h2>Create New Order</h2>
+<p>Create an order that customers can match.</p>
+</div>
+</div>
+
+<div id="adminOrderMessage"></div>
+
+<form id="adminOrderForm">
+
+<div class="form-grid">
+
+<div class="form-group">
+<label>Product name</label>
+<input id="adminProductName" placeholder="Example: Test Product" required>
+</div>
+
+<div class="form-group">
+<label>Amount (KES)</label>
+<input id="adminOrderAmount" type="number" min="1" step="1" required>
+</div>
+
+</div>
+
+<button id="adminCreateOrderButton" class="primary-btn">
+Create New Order
+</button>
+
+</form>
+</div>
+
+<!-- MANAGE ORDERS -->
+
+<div class="section-card">
+
+<div class="section-header">
+<div>
+<h2>Manage Orders</h2>
+</div>
+</div>
+
+<div id="adminOrdersTable">
+<div class="empty">Loading...</div>
+</div>
+
+</div>
+
+<!-- TRANSACTIONS -->
+
+<div class="section-card">
+
+<div class="section-header">
+<div>
+<h2>Transaction Requests</h2>
+</div>
+</div>
+
+<div id="adminTransactionsTable">
+<div class="empty">Loading...</div>
+</div>
+
+</div>
+
+<!-- MPESA -->
+
+<div class="section-card">
+
+<div class="section-header">
+<div>
+<h2>M-Pesa Payments</h2>
+</div>
+</div>
+
+<div id="adminMpesaTable">
+<div class="empty">Loading...</div>
+</div>
+
+</div>
+
+</section>
+
+<div class="footer">
+OrderMatch • Customer platform
+</div>
+
+</main>
+</div>
+
+<!-- CUSTOMER DETAILS MODAL -->
+
+<div id="customerModal" class="customer-modal hidden">
+
+<div class="customer-modal-card">
+
+<div class="section-header">
+<div>
+<h2>Customer Details</h2>
+<p>Customer account information.</p>
+</div>
+
+<button id="customerModalClose" class="danger-btn" type="button">
+Close
+</button>
+</div>
+
+<div id="customerModalMessage"></div>
+
+<div id="customerDetailsContent">
+<div class="empty">Loading customer details...</div>
+</div>
+
+</div>
+</div>
+
+<script>
+
+const SUPABASE_URL="https://bdflurarenkcvcnttrya.supabase.co";
+const SUPABASE_KEY="sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+const supabaseClient=window.supabase.createClient(
+ SUPABASE_URL,
+ SUPABASE_KEY
+);
+
+let currentUser=null;
+let currentProfile=null;
+let isAdmin=false;
+
+let applicationLoading=false;
+let signupInProgress=false;
+let depositInProgress=false;
+let withdrawalInProgress=false;
+
+let matchingOrders=new Set();
+let allCustomers=[];
+
+const $=id=>document.getElementById(id);
+
+function escapeHtml(v){
+ if(v===null||v===undefined)return"";
+ return String(v)
+  .replaceAll("&","&amp;")
+  .replaceAll("<","&lt;")
+  .replaceAll(">","&gt;")
+  .replaceAll('"',"&quot;")
+  .replaceAll("'","&#039;");
+}
+
+function money(v){
+ return Number(v||0).toLocaleString(
+  "en-KE",
+  {minimumFractionDigits:2,maximumFractionDigits:2}
+ );
+}
+
+function dateTime(v){
+ if(!v)return"—";
+ try{
+  return new Date(v).toLocaleString(
+   "en-KE",
+   {dateStyle:"short",timeStyle:"short"}
+  );
+ }catch{
+  return v;
+ }
+}
+
+function statusBadge(v){
+ const s=String(v||"unknown")
+  .toLowerCase()
+  .replace(/[^a-z0-9_-]/g,"");
+
+ return `<span class="status ${s}">
+ ${escapeHtml(v||"unknown")}
+ </span>`;
+}
+
+function showMessage(id,msg,type="info"){
+ const e=$(id);
+ if(!e)return;
+
+ e.innerHTML=msg
+  ?`<div class="message ${type}">${escapeHtml(msg)}</div>`
+  :"";
+}
+
+function setButtonLoading(btn,loading,text){
+ if(!btn)return;
+
+ if(loading){
+  btn.disabled=true;
+  btn.dataset.originalText=btn.innerHTML;
+  btn.innerHTML=
+   `<span class="loader"></span>${escapeHtml(text||"Please wait...")}`;
+ }else{
+  btn.disabled=false;
+  btn.innerHTML=btn.dataset.originalText||text||"Submit";
+ }
+}
+
+function normalizePhone(phone){
+ let v=String(phone||"").trim().replace(/\s+/g,"");
+
+ if(v.startsWith("+254"))
+  v="0"+v.substring(4);
+
+ if(v.startsWith("254"))
+  v="0"+v.substring(3);
+
+ return v;
+}
+
+function validKenyanPhone(phone){
+ return /^(07|01)\d{8}$/.test(normalizePhone(phone));
+}
+
+function phoneForMpesa(phone){
+ const v=normalizePhone(phone);
+
+ if(/^(07|01)\d{8}$/.test(v))
+  return"254"+v.substring(1);
+
+ return v;
+}
+
+function scrollToSection(id){
+ const e=$(id);
+ if(e)
+  e.scrollIntoView({
+   behavior:"smooth",
+   block:"start"
+  });
+}
+
+function showAuthView(view){
+ ["loginView","signupView","resetView"]
+  .forEach(x=>$(x).classList.add("hidden"));
+
+ $(view+"View").classList.remove("hidden");
+}
+
+/* AUTH */
+
+$("showSignup").onclick=()=>showAuthView("signup");
+$("showLogin").onclick=()=>showAuthView("login");
+$("showReset").onclick=()=>showAuthView("reset");
+$("resetBack").onclick=()=>showAuthView("login");
+
+$("loginForm").onsubmit=async e=>{
+ e.preventDefault();
+
+ setButtonLoading(
+  $("loginButton"),
+  true,
+  "Signing in..."
+ );
+
+ try{
+
+  const{data,error}=await supabaseClient.auth.signInWithPassword({
+   email:$("loginEmail").value.trim(),
+   password:$("loginPassword").value
+  });
+
+  if(error)throw error;
+
+  if(!data.user)
+   throw new Error("Login was not completed.");
+
+ }catch(err){
+
+  showMessage(
+   "loginMessage",
+   err.message||"Unable to sign in.",
+   "error"
+  );
+
+ }finally{
+
+  setButtonLoading(
+   $("loginButton"),
+   false,
+   "Sign In"
+  );
+
+ }
+};
+
+$("signupForm").onsubmit=async e=>{
+ e.preventDefault();
+
+ if(signupInProgress)return;
+
+ const name=$("signupName").value.trim();
+ const phone=normalizePhone($("signupPhone").value);
+ const email=$("signupEmail").value.trim();
+ const password=$("signupPassword").value;
+ const confirm=$("signupConfirm").value;
+
+ if(name.length<2)
+  return showMessage(
+   "signupMessage",
+   "Please enter your full name.",
+   "error"
+  );
+
+ if(!validKenyanPhone(phone))
+  return showMessage(
+   "signupMessage",
+   "Enter a valid Kenyan phone number.",
+   "error"
+  );
+
+ if(password.length<6)
+  return showMessage(
+   "signupMessage",
+   "Password must contain at least 6 characters.",
+   "error"
+  );
+
+ if(password!==confirm)
+  return showMessage(
+   "signupMessage",
+   "The passwords do not match.",
+   "error"
+  );
+
+ signupInProgress=true;
+
+ setButtonLoading(
+  $("signupButton"),
+  true,
+  "Creating account..."
+ );
+
+ try{
+
+  const{data,error}=await supabaseClient.auth.signUp({
+   email,
+   password,
+   options:{
+    emailRedirectTo:
+     window.location.origin+window.location.pathname,
+
+    data:{
+     full_name:name,
+     phone
+    }
+   }
+  });
+
+  if(error)throw error;
+
+  if(!data.session){
+
+   showMessage(
+    "signupMessage",
+    "Account created. Check your email and confirm your account before signing in.",
+    "success"
+   );
+
+   $("signupPassword").value="";
+   $("signupConfirm").value="";
+
+  }else{
+
+   currentUser=data.user;
+
+   await ensureProfile(
+    name,
+    phone
+   );
+
+  }
+
+ }catch(err){
+
+  showMessage(
+   "signupMessage",
+   err.message||"Unable to create your account.",
+   "error"
+  );
+
+ }finally{
+
+  signupInProgress=false;
+
+  setButtonLoading(
+   $("signupButton"),
+   false,
+   "Create Account"
+  );
+
+ }
+};
+
+$("resetForm").onsubmit=async e=>{
+ e.preventDefault();
+
+ try{
+
+  const{error}=await supabaseClient.auth.resetPasswordForEmail(
+   $("resetEmail").value.trim(),
+   {
+    redirectTo:
+     window.location.origin+window.location.pathname
+   }
+  );
+
+  if(error)throw error;
+
+  showMessage(
+   "resetMessage",
+   "If the email is registered, a password reset link has been sent.",
+   "success"
+  );
+
+ }catch(err){
+
+  showMessage(
+   "resetMessage",
+   err.message||"Unable to send reset link.",
+   "error"
+  );
+
+ }
+};
+
+$("logoutButton").onclick=async()=>{
+
+ await supabaseClient.auth.signOut();
+
+ currentUser=null;
+ currentProfile=null;
+ isAdmin=false;
+
+ $("application").classList.add("hidden");
+ $("authPage").classList.remove("hidden");
+
+ showAuthView("login");
+
+};
+
+/* PROFILE */
+
+async function ensureProfile(fullName="",phone=""){
+
+ if(!currentUser)return null;
+
+ const{
+  data:existing,
+  error:selectError
+ }=await supabaseClient
+  .from("profiles")
+  .select("*")
+  .eq("id",currentUser.id)
+  .maybeSingle();
+
+ if(selectError)
+  throw selectError;
+
+ if(existing){
+
+  currentProfile=existing;
+
+  const metadata=currentUser.user_metadata||{};
+
+  const name=
+   existing.full_name||
+   fullName||
+   metadata.full_name||
+   "";
+
+  const ph=
+   existing.phone||
+   phone||
+   metadata.phone||
+   "";
+
+  if(
+   (!existing.full_name&&name)||
+   (!existing.phone&&ph)
+  ){
+
+   const{
+    data:updated,
+    error
+   }=await supabaseClient
+    .from("profiles")
+    .update({
+     full_name:name,
+     phone:ph
+    })
+    .eq("id",currentUser.id)
+    .select()
+    .single();
+
+   if(!error&&updated)
+    currentProfile=updated;
+  }
+
+  return currentProfile;
+ }
+
+ const metadata=currentUser.user_metadata||{};
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("profiles")
+  .insert({
+   id:currentUser.id,
+   full_name:
+    fullName||
+    metadata.full_name||
+    "",
+   phone:
+    phone||
+    metadata.phone||
+    ""
+  })
+  .select()
+  .single();
+
+ if(error)
+  throw error;
+
+ currentProfile=data;
+
+ return data;
+}
+
+async function loadProfile(){
+
+ if(!currentUser)return;
+
+ try{
+
+  await ensureProfile();
+
+  $("profileEmail").textContent=
+   currentUser.email||"—";
+
+  $("profileId").textContent=
+   currentUser.id||"—";
+
+  $("profileName").value=
+   currentProfile?.full_name||"";
+
+  $("profilePhone").value=
+   currentProfile?.phone||"";
+
+  $("depositPhone").value=
+   currentProfile?.phone||"";
+
+  $("withdrawPhone").value=
+   currentProfile?.phone||"";
+
+  $("welcomeName").textContent=
+   currentProfile?.full_name||
+   currentUser.user_metadata?.full_name||
+   currentUser.email?.split("@")[0]||
+   "Customer";
+
+ }catch(err){
+
+  showMessage(
+   "profileMessage",
+   err.message||"Unable to load profile.",
+   "error"
+  );
+
+ }
+}
+
+$("profileForm").onsubmit=async e=>{
+
+ e.preventDefault();
+
+ const name=$("profileName").value.trim();
+ const phone=normalizePhone(
+  $("profilePhone").value
+ );
+
+ if(name.length<2)
+  return showMessage(
+   "profileMessage",
+   "Please enter your full name.",
+   "error"
+  );
+
+ if(!validKenyanPhone(phone))
+  return showMessage(
+   "profileMessage",
+   "Enter a valid Kenyan phone number.",
+   "error"
+  );
+
+ setButtonLoading(
+  $("saveProfileButton"),
+  true,
+  "Saving..."
+ );
+
+ try{
+
+  const{
+   data,
+   error
+  }=await supabaseClient
+   .from("profiles")
+   .upsert(
+    {
+     id:currentUser.id,
+     full_name:name,
+     phone
+    },
+    {onConflict:"id"}
+   )
+   .select()
+   .single();
+
+  if(error)
+   throw error;
+
+  currentProfile=data;
+
+  $("depositPhone").value=phone;
+  $("withdrawPhone").value=phone;
+  $("welcomeName").textContent=name;
+
+  showMessage(
+   "profileMessage",
+   "Profile updated successfully.",
+   "success"
+  );
+
+ }catch(err){
+
+  showMessage(
+   "profileMessage",
+   err.message||"Unable to save profile.",
+   "error"
+  );
+
+ }finally{
+
+  setButtonLoading(
+   $("saveProfileButton"),
+   false,
+   "Save Profile"
+  );
+
+ }
+};
+
+/* BALANCE */
+
+async function loadBalance(){
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("account_balances")
+  .select("balance")
+  .eq("user_id",currentUser.id)
+  .maybeSingle();
+
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ const b=Number(data?.balance||0);
+
+ $("balance").textContent=money(b);
+ $("summaryBalance").textContent=money(b);
+
+}
+
+async function loadDashboardStats(){
+
+ const[
+  available,
+  matches,
+  pending
+ ]=await Promise.all([
+
+  supabaseClient
+   .from("orders")
+   .select("id",{count:"exact",head:true})
+   .eq("status","available"),
+
+  supabaseClient
+   .from("order_matches")
+   .select("id",{count:"exact",head:true})
+   .eq("user_id",currentUser.id),
+
+  supabaseClient
+   .from("transactions")
+   .select("id",{count:"exact",head:true})
+   .eq("user_id",currentUser.id)
+   .eq("status","pending")
+
+ ]);
+
+ $("availableCount").textContent=
+  available.count||0;
+
+ $("matchedCount").textContent=
+  matches.count||0;
+
+ $("pendingCount").textContent=
+  pending.count||0;
+
+}
+
+/* ORDERS */
+
+async function loadAvailableOrders(){
+
+ const c=$("availableOrders");
+
+ c.innerHTML=
+  '<div class="empty">Loading orders...</div>';
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("orders")
+  .select("*")
+  .eq("status","available")
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load orders.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No available orders right now.</div>';
+
+  return;
+ }
+
+ c.innerHTML=data.map(o=>`
+
+ <div class="order-card">
+
+  <h3>${escapeHtml(o.product_name)}</h3>
+
+  <div class="order-amount">
+   KES ${money(o.amount)}
+  </div>
+
+  <div style="margin-bottom:14px">
+   ${statusBadge(o.status)}
+  </div>
+
+  <button
+   id="match-${Number(o.id)}"
+   class="primary-btn full-btn"
+   onclick="matchOrder(${Number(o.id)})">
+   Match Order
+  </button>
+
+ </div>
+
+ `).join("");
+
+}
+
+async function matchOrder(orderId){
+
+ if(!currentUser||
+    matchingOrders.has(orderId))
+  return;
+
+ matchingOrders.add(orderId);
+
+ const b=$(`match-${orderId}`);
+
+ if(b){
+  b.disabled=true;
+  b.innerHTML=
+   '<span class="loader"></span>Matching...';
+ }
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "match_order",
+   {p_order_id:orderId}
+  );
+
+  if(error)
+   throw error;
+
+  showMessage(
+   "ordersMessage",
+   "Order matched successfully.",
+   "success"
+  );
+
+  await loadApplicationData();
+
+ }catch(err){
+
+  showMessage(
+   "ordersMessage",
+   err.message||
+   "Unable to match this order.",
+   "error"
+  );
+
+  await loadAvailableOrders();
+
+ }finally{
+
+  matchingOrders.delete(orderId);
+
+ }
+}
+
+async function loadMatchedOrders(){
+
+ const c=$("matchedOrders");
+
+ c.innerHTML=
+  '<div class="empty">Loading...</div>';
+
+ let{
+  data,
+  error
+ }=await supabaseClient
+  .from("order_matches")
+  .select(`
+   id,
+   order_id,
+   user_id,
+   matched_at,
+   orders(
+    id,
+    product_name,
+    amount,
+    status,
+    created_at
+   )
+  `)
+  .eq("user_id",currentUser.id)
+  .order("matched_at",{ascending:false});
+
+ if(error){
+
+  const fallback=
+   await supabaseClient
+    .from("order_matches")
+    .select("*")
+    .eq("user_id",currentUser.id)
+    .order("matched_at",{ascending:false});
+
+  const ids=(fallback.data||[])
+   .map(x=>x.order_id);
+
+  const ord=ids.length
+   ?await supabaseClient
+    .from("orders")
+    .select("*")
+    .in("id",ids)
+   :{data:[]};
+
+  const map={};
+
+  (ord.data||[]).forEach(x=>{
+   map[x.id]=x;
+  });
+
+  data=(fallback.data||[])
+   .map(x=>({
+    ...x,
+    orders:map[x.order_id]
+   }));
+ }
+
+ renderMatchedOrders(data||[]);
+}
+
+function renderMatchedOrders(items){
+
+ const c=$("matchedOrders");
+
+ if(!items.length){
+
+  c.innerHTML=
+   '<div class="empty">You have no matched orders yet.</div>';
+
+  return;
+ }
+
+ c.innerHTML=items.map(i=>{
+
+  const o=
+   Array.isArray(i.orders)
+   ?i.orders[0]
+   :i.orders;
+
+  if(!o)return"";
+
+  const completed=
+   String(o.status).toLowerCase()==="completed";
+
+  return`
+
+  <div class="order-card">
+
+   <h3>${escapeHtml(o.product_name)}</h3>
+
+   <div class="order-amount">
+    KES ${money(o.amount)}
+   </div>
+
+   <div style="margin-bottom:10px">
+    ${statusBadge(o.status)}
+   </div>
+
+   <div style="
+    font-size:12px;
+    color:#6b7280;
+    margin-bottom:14px
+   ">
+    Matched: ${dateTime(i.matched_at)}
+   </div>
+
+   ${
+    completed
+    ?'<button class="success-btn full-btn" disabled>Completed</button>'
+    :`
+     <button
+      class="primary-btn full-btn"
+      onclick="completeOrder(${Number(o.id)})">
+      Complete Order
+     </button>
+    `
+   }
+
+  </div>
+
+  `;
+
+ }).join("");
+
+}
+
+async function completeOrder(orderId){
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "complete_order",
+   {p_order_id:orderId}
+  );
+
+  if(error)
+   throw error;
+
+  showMessage(
+   "ordersMessage",
+   "Order completed successfully.",
+   "success"
+  );
+
+  await loadApplicationData();
+
+ }catch(err){
+
+  showMessage(
+   "ordersMessage",
+   err.message||
+   "Unable to complete order.",
+   "error"
+  );
+
+ }
+}
+
+/* DEPOSIT */
+
+$("depositForm").onsubmit=async e=>{
+
+ e.preventDefault();
+
+ if(depositInProgress)return;
+
+ const phone=
+  normalizePhone($("depositPhone").value);
+
+ const amount=
+  Number($("depositAmount").value);
+
+ if(!validKenyanPhone(phone))
+  return showMessage(
+   "depositMessage",
+   "Enter a valid Kenyan phone number.",
+   "error"
+  );
+
+ if(!Number.isFinite(amount)||amount<=0)
+  return showMessage(
+   "depositMessage",
+   "Enter a valid deposit amount.",
+   "error"
+  );
+
+ depositInProgress=true;
+
+ setButtonLoading(
+  $("depositButton"),
+  true,
+  "Starting M-Pesa..."
+ );
+
+ try{
+
+  const{
+   data,
+   error
+  }=await supabaseClient.functions.invoke(
+   "Mpesa-stk-push",
+   {
+    body:{
+     phone:phoneForMpesa(phone),
+     amount
+    }
+   }
+  );
+
+  if(error)
+   throw error;
+
+  if(data?.error&&!data.checkout_request_id)
+   throw new Error(data.error);
+
+  showMessage(
+   "depositMessage",
+   "M-Pesa STK Push sent. Complete the payment on your phone, then wait for the payment status to update.",
+   "success"
+  );
+
+  $("depositAmount").value="";
+
+  await loadTransactions();
+
+  setTimeout(
+   loadApplicationData,
+   5000
+  );
+
+ }catch(err){
+
+  showMessage(
+   "depositMessage",
+   err.message||
+   "Unable to start the M-Pesa payment.",
+   "error"
+  );
+
+ }finally{
+
+  depositInProgress=false;
+
+  setButtonLoading(
+   $("depositButton"),
+   false,
+   "Deposit with M-Pesa"
+  );
+
+ }
+};
+
+/* WITHDRAW */
+
+$("withdrawForm").onsubmit=async e=>{
+
+ e.preventDefault();
+
+ if(withdrawalInProgress)return;
+
+ const phone=
+  normalizePhone($("withdrawPhone").value);
+
+ const amount=
+  Number($("withdrawAmount").value);
+
+ if(!validKenyanPhone(phone))
+  return showMessage(
+   "withdrawMessage",
+   "Enter a valid Kenyan phone number.",
+   "error"
+  );
+
+ if(!Number.isFinite(amount)||amount<=0)
+  return showMessage(
+   "withdrawMessage",
+   "Enter a valid withdrawal amount.",
+   "error"
+  );
+
+ withdrawalInProgress=true;
+
+ setButtonLoading(
+  $("withdrawButton"),
+  true,
+  "Submitting..."
+ );
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "request_withdrawal",
+   {
+    p_amount:amount,
+    p_reference:phone
+   }
+  );
+
+  if(error)
+   throw error;
+
+  showMessage(
+   "withdrawMessage",
+   "Withdrawal request submitted successfully. It is now awaiting processing.",
+   "success"
+  );
+
+  $("withdrawAmount").value="";
+
+  await loadApplicationData();
+
+ }catch(err){
+
+  showMessage(
+   "withdrawMessage",
+   err.message||
+   "Unable to submit withdrawal request.",
+   "error"
+  );
+
+ }finally{
+
+  withdrawalInProgress=false;
+
+  setButtonLoading(
+   $("withdrawButton"),
+   false,
+   "Request Withdrawal"
+  );
+
+ }
+};
+
+/* CUSTOMER TRANSACTIONS */
+
+async function loadTransactions(){
+
+ const c=$("transactionsTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("transactions")
+  .select("*")
+  .eq("user_id",currentUser.id)
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load transaction history.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No transactions yet.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+ <tr>
+  <th>Type</th>
+  <th>Amount</th>
+  <th>Status</th>
+  <th>Reference</th>
+  <th>Date</th>
+ </tr>
+ </thead>
+
+ <tbody>
+
+ ${data.map(x=>`
+
+ <tr>
+
+ <td>${escapeHtml(x.type)}</td>
+
+ <td>KES ${money(x.amount)}</td>
+
+ <td>${statusBadge(x.status)}</td>
+
+ <td>${escapeHtml(x.reference||"—")}</td>
+
+ <td>${dateTime(x.created_at)}</td>
+
+ </tr>
+
+ `).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+async function loadBalanceHistory(){
+
+ const c=$("balanceHistoryTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("balance_ledger")
+  .select("*")
+  .eq("user_id",currentUser.id)
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load balance history.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No balance history yet.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+ <tr>
+  <th>Type</th>
+  <th>Amount</th>
+  <th>Before</th>
+  <th>After</th>
+  <th>Date</th>
+ </tr>
+ </thead>
+
+ <tbody>
+
+ ${data.map(x=>`
+
+ <tr>
+
+ <td>${escapeHtml(x.entry_type)}</td>
+
+ <td>KES ${money(x.amount)}</td>
+
+ <td>KES ${money(x.balance_before)}</td>
+
+ <td>KES ${money(x.balance_after)}</td>
+
+ <td>${dateTime(x.created_at)}</td>
+
+ </tr>
+
+ `).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+async function loadOrderHistory(){
+
+ const c=$("orderHistoryTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("order_matches")
+  .select(`
+   id,
+   order_id,
+   matched_at,
+   orders(
+    product_name,
+    amount,
+    status,
+    created_at
+   )
+  `)
+  .eq("user_id",currentUser.id)
+  .order("matched_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load order history.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No order history yet.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+ <tr>
+  <th>Order</th>
+  <th>Amount</th>
+  <th>Status</th>
+  <th>Matched</th>
+ </tr>
+ </thead>
+
+ <tbody>
+
+ ${data.map(x=>{
+
+  const o=
+   Array.isArray(x.orders)
+   ?x.orders[0]
+   :x.orders;
+
+  if(!o)return"";
+
+  return`
+
+  <tr>
+
+   <td>${escapeHtml(o.product_name)}</td>
+
+   <td>KES ${money(o.amount)}</td>
+
+   <td>${statusBadge(o.status)}</td>
+
+   <td>${dateTime(x.matched_at)}</td>
+
+  </tr>
+
+  `;
+
+ }).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+/* ADMIN */
+
+async function checkAdmin(){
+
+ if(!currentUser)return false;
+
+ try{
+
+  const{
+   data,
+   error
+  }=await supabaseClient.rpc("is_admin");
+
+  if(error)
+   throw error;
+
+  isAdmin=data===true;
+
+  $("adminOpenButton")
+   .classList
+   .toggle("hidden",!isAdmin);
+
+  return isAdmin;
+
+ }catch{
+
+  isAdmin=false;
+
+  $("adminOpenButton")
+   .classList
+   .add("hidden");
+
+  return false;
+
+ }
+}
+
+$("adminOpenButton").onclick=async()=>{
+
+ if(!isAdmin)return;
+
+ $("adminSection")
+  .classList
+  .remove("hidden");
+
+ await loadAdminDashboard();
+
+ scrollToSection("adminSection");
+
+};
+
+$("adminCloseButton").onclick=()=>{
+
+ $("adminSection")
+  .classList
+  .add("hidden");
+
+ window.scrollTo({
+  top:0,
+  behavior:"smooth"
+ });
+
+};
+
+/* ADMIN CUSTOMER MANAGEMENT */
+
+/*
+ FIX:
+ The customer row can expose either id or user_id depending
+ on the RPC result. We always resolve the actual UUID before
+ opening the details view.
+*/
+
+function getCustomerId(customer){
+
+ const candidates=[
+  customer?.user_id,
+  customer?.id,
+  customer?.customer_id,
+  customer?.profile_id
+ ];
+
+ for(const value of candidates){
+
+  if(
+   typeof value==="string" &&
+   value.trim()!=""
+  ){
+
+   const v=value.trim();
+
+   if(
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+   ){
+    return v;
+   }
+
+  }
+
+ }
+
+ return null;
+}
+
+async function loadAdminCustomers(){
+
+ if(!isAdmin)return;
+
+ const c=$("adminCustomersTable");
+
+ c.innerHTML=
+  '<div class="empty">Loading customers...</div>';
+
+ const{
+  data,
+  error
+ }=await supabaseClient.rpc(
+  "admin_get_customers"
+ );
+
+ if(error){
+
+  console.error(error);
+
+  c.innerHTML=
+   `<div class="empty">
+    Unable to load customers:
+    ${escapeHtml(error.message)}
+   </div>`;
+
+  return;
+ }
+
+ allCustomers=data||[];
+
+ $("adminTotalCustomers").textContent=
+  allCustomers.length;
+
+ renderAdminCustomers(allCustomers);
+
+}
+
+function renderAdminCustomers(customers){
+
+ const c=$("adminCustomersTable");
+
+ if(!customers.length){
+
+  c.innerHTML=
+   '<div class="empty">No customers found.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+
+ <tr>
+  <th>Name</th>
+  <th>Email</th>
+  <th>M-Pesa Phone</th>
+  <th>Balance</th>
+  <th>Joined</th>
+  <th>Action</th>
+ </tr>
+
+ </thead>
+
+ <tbody>
+
+ ${customers.map((x,index)=>{
+
+  const customerId=
+   getCustomerId(x);
+
+  return`
+
+  <tr>
+
+   <td>
+    <strong>
+     ${escapeHtml(x.full_name||"Not provided")}
+    </strong>
+   </td>
+
+   <td>
+    ${escapeHtml(x.email||"—")}
+   </td>
+
+   <td>
+    ${escapeHtml(x.phone||"—")}
+   </td>
+
+   <td>
+    <strong>
+     KES ${money(x.balance)}
+    </strong>
+   </td>
+
+   <td>
+    ${dateTime(x.created_at)}
+   </td>
+
+   <td>
+
+    ${
+     customerId
+     ?`
+      <button
+       class="secondary-btn"
+       type="button"
+       onclick="viewCustomer(${JSON.stringify(customerId)})">
+       View
+      </button>
+     `
+     :`
+      <span style="color:#6b7280">
+       ID unavailable
+      </span>
+     `
+    }
+
+   </td>
+
+  </tr>
+
+  `;
+
+ }).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+$("customerSearch").oninput=()=>{
+
+ const q=
+  $("customerSearch")
+   .value
+   .trim()
+   .toLowerCase();
+
+ const filtered=
+  allCustomers.filter(x=>
+   String(x.full_name||"")
+    .toLowerCase()
+    .includes(q)||
+
+   String(x.email||"")
+    .toLowerCase()
+    .includes(q)||
+
+   String(x.phone||"")
+    .toLowerCase()
+    .includes(q)
+  );
+
+ renderAdminCustomers(filtered);
+
+};
+
+$("refreshCustomersButton").onclick=
+ loadAdminCustomers;
+
+/* CUSTOMER DETAILS */
+
+async function viewCustomer(customerId){
+
+ if(!isAdmin)return;
+
+ const id=
+  typeof customerId==="string"
+  ?customerId.trim()
+  :"";
+
+ /*
+  Critical protection against the previous:
+  invalid input syntax for type uuid: ""
+ */
+ if(!id){
+
+  showMessage(
+   "customerModalMessage",
+   "This customer does not have a valid account ID.",
+   "error"
+  );
+
+  $("customerModal").classList.remove("hidden");
+
+  return;
+ }
+
+ if(
+  !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)
+ ){
+
+  showMessage(
+   "customerModalMessage",
+   "Invalid customer account ID.",
+   "error"
+  );
+
+  $("customerModal").classList.remove("hidden");
+
+  return;
+ }
+
+ $("customerModal").classList.remove("hidden");
+
+ $("customerModalMessage").innerHTML="";
+
+ $("customerDetailsContent").innerHTML=
+  '<div class="empty">Loading customer details...</div>';
+
+ try{
+
+  /*
+   Load the profile using the verified UUID.
+  */
+
+  const[
+   profileResult,
+   balanceResult,
+   transactionResult,
+   matchResult
+  ]=await Promise.all([
+
+   supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id",id)
+    .maybeSingle(),
+
+   supabaseClient
+    .from("account_balances")
+    .select("*")
+    .eq("user_id",id)
+    .maybeSingle(),
+
+   supabaseClient
+    .from("transactions")
+    .select("*")
+    .eq("user_id",id)
+    .order("created_at",{ascending:false})
+    .limit(10),
+
+   supabaseClient
+    .from("order_matches")
+    .select("id,order_id,matched_at")
+    .eq("user_id",id)
+    .order("matched_at",{ascending:false})
+    .limit(10)
+
+  ]);
+
+  if(profileResult.error)
+   throw profileResult.error;
+
+  if(balanceResult.error)
+   throw balanceResult.error;
+
+  if(transactionResult.error)
+   throw transactionResult.error;
+
+  if(matchResult.error)
+   throw matchResult.error;
+
+  const profile=
+   profileResult.data||{};
+
+  const balance=
+   Number(balanceResult.data?.balance||0);
+
+  const transactions=
+   transactionResult.data||[];
+
+  const matches=
+   matchResult.data||[];
+
+  const customer=
+   allCustomers.find(x=>
+    getCustomerId(x)===id
+  );
+
+  const email=
+   profile.email||
+   customer?.email||
+   "—";
+
+  $("customerDetailsContent").innerHTML=`
+
+   <div class="customer-detail-grid">
+
+    <div class="customer-detail">
+     <small>Full name</small>
+     <strong>
+      ${escapeHtml(
+       profile.full_name||
+       customer?.full_name||
+       "Not provided"
+      )}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Email</small>
+     <strong>
+      ${escapeHtml(email)}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>M-Pesa phone</small>
+     <strong>
+      ${escapeHtml(
+       profile.phone||
+       customer?.phone||
+       "Not provided"
+      )}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Account balance</small>
+     <strong>
+      KES ${money(balance)}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Account ID</small>
+     <strong>${escapeHtml(id)}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Transactions</small>
+     <strong>${transactions.length}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Matches</small>
+     <strong>${matches.length}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Joined</small>
+     <strong>
+      ${dateTime(
+       profile.created_at||
+       customer?.created_at
+      )}
+     </strong>
+    </div>
+
+   </div>
+
+   <h3 style="margin:0 0 10px">
+    Recent Transactions
+   </h3>
+
+   ${
+    transactions.length
+    ?`
+     <div class="table-wrap">
+
+      <table>
+
+       <thead>
+        <tr>
+         <th>Type</th>
+         <th>Amount</th>
+         <th>Status</th>
+         <th>Date</th>
+        </tr>
+       </thead>
+
+       <tbody>
+
+       ${transactions.map(t=>`
+
+        <tr>
+         <td>${escapeHtml(t.type)}</td>
+         <td>KES ${money(t.amount)}</td>
+         <td>${statusBadge(t.status)}</td>
+         <td>${dateTime(t.created_at)}</td>
+        </tr>
+
+       `).join("")}
+
+       </tbody>
+
+      </table>
+
+     </div>
+    `
+    :`
+     <div class="empty">
+      No transactions found.
+     </div>
+    `
+   }
+
+  `;
+
+ }catch(err){
+
+  console.error("Customer details error:",err);
+
+  showMessage(
+   "customerModalMessage",
+   "Unable to load customer details: "+
+   (err.message||"Unknown error"),
+   "error"
+  );
+
+  $("customerDetailsContent").innerHTML=
+   '<div class="empty">Customer details could not be loaded.</div>';
+
+ }
+
+}
+
+$("customerModalClose").onclick=()=>{
+
+ $("customerModal")
+  .classList
+  .add("hidden");
+
+ $("customerModalMessage").innerHTML="";
+
+};
+
+$("customerModal").onclick=e=>{
+
+ if(e.target===$("customerModal")){
+
+  $("customerModal")
+   .classList
+   .add("hidden");
+
+ }
+
+};
+
+/* ADMIN CREATE ORDER */
+
+$("adminOrderForm").onsubmit=async e=>{
+
+ e.preventDefault();
+
+ if(!isAdmin)return;
+
+ const productName=
+  $("adminProductName")
+   .value
+   .trim();
+
+ const amount=
+  Number($("adminOrderAmount").value);
+
+ if(!productName)
+  return showMessage(
+   "adminOrderMessage",
+   "Enter a product name.",
+   "error"
+  );
+
+ if(!Number.isFinite(amount)||amount<=0)
+  return showMessage(
+   "adminOrderMessage",
+   "Enter a valid amount.",
+   "error"
+  );
+
+ setButtonLoading(
+  $("adminCreateOrderButton"),
+  true,
+  "Creating..."
+ );
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "admin_create_order",
+   {
+    p_product_name:productName,
+    p_amount:amount
+   }
+  );
+
+  if(error)
+   throw error;
+
+  showMessage(
+   "adminOrderMessage",
+   "Order created successfully.",
+   "success"
+  );
+
+  $("adminProductName").value="";
+  $("adminOrderAmount").value="";
+
+  await loadAdminDashboard();
+  await loadAvailableOrders();
+  await loadDashboardStats();
+
+ }catch(err){
+
+  showMessage(
+   "adminOrderMessage",
+   err.message||
+   "Unable to create order.",
+   "error"
+  );
+
+ }finally{
+
+  setButtonLoading(
+   $("adminCreateOrderButton"),
+   false,
+   "Create New Order"
+  );
+
+ }
+
+};
+
+/* ADMIN STATS */
+
+async function loadAdminStats(){
+
+ const[
+  orders,
+  pending,
+  payments
+ ]=await Promise.all([
+
+  supabaseClient
+   .from("orders")
+   .select("id",{count:"exact",head:true}),
+
+  supabaseClient
+   .from("transactions")
+   .select("id",{count:"exact",head:true})
+   .eq("status","pending"),
+
+  supabaseClient
+   .from("mpesa_payments")
+   .select("id",{count:"exact",head:true})
+
+ ]);
+
+ $("adminTotalOrders").textContent=
+  orders.count||0;
+
+ $("adminPendingTransactions").textContent=
+  pending.count||0;
+
+ $("adminMpesaPayments").textContent=
+  payments.count||0;
+
+}
+
+/* ADMIN ORDERS */
+
+async function loadAdminOrders(){
+
+ const c=$("adminOrdersTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("orders")
+  .select("*")
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load orders.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No orders found.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+ <tr>
+  <th>ID</th>
+  <th>Product</th>
+  <th>Amount</th>
+  <th>Status</th>
+  <th>Created</th>
+  <th>Action</th>
+ </tr>
+ </thead>
+
+ <tbody>
+
+ ${data.map(o=>{
+
+  const canCancel=
+   String(o.status||"")
+    .toLowerCase()==="available";
+
+  return`
+
+  <tr>
+
+   <td>#${Number(o.id)}</td>
+
+   <td>${escapeHtml(o.product_name)}</td>
+
+   <td>KES ${money(o.amount)}</td>
+
+   <td>${statusBadge(o.status)}</td>
+
+   <td>${dateTime(o.created_at)}</td>
+
+   <td>
+
+   ${
+    canCancel
+    ?`
+     <button
+      class="danger-btn"
+      onclick="adminCancelOrder(${Number(o.id)})">
+      Cancel
+     </button>
+    `
+    :"—"
+   }
+
+   </td>
+
+  </tr>
+
+  `;
+
+ }).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+async function adminCancelOrder(orderId){
+
+ if(
+  !isAdmin||
+  !confirm("Cancel this order?")
+ )
+  return;
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "admin_cancel_order",
+   {p_order_id:orderId}
+  );
+
+  if(error)
+   throw error;
+
+  await loadAdminDashboard();
+  await loadAvailableOrders();
+  await loadDashboardStats();
+
+ }catch(err){
+
+  alert(
+   err.message||
+   "Unable to cancel the order."
+  );
+
+ }
+
+}
+
+/* ADMIN TRANSACTIONS */
+
+async function loadAdminTransactions(){
+
+ const c=$("adminTransactionsTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("transactions")
+  .select("*")
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load transactions.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No transaction requests found.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+
+ <tr>
+  <th>ID</th>
+  <th>User</th>
+  <th>Type</th>
+  <th>Amount</th>
+  <th>Status</th>
+  <th>Reference</th>
+  <th>Action</th>
+ </tr>
+
+ </thead>
+
+ <tbody>
+
+ ${data.map(x=>{
+
+  const pending=
+   String(x.status||"")
+    .toLowerCase()==="pending";
+
+  return`
+
+  <tr>
+
+   <td>#${Number(x.id)}</td>
+
+   <td>${escapeHtml(x.user_id)}</td>
+
+   <td>${escapeHtml(x.type)}</td>
+
+   <td>KES ${money(x.amount)}</td>
+
+   <td>${statusBadge(x.status)}</td>
+
+   <td>${escapeHtml(x.reference||"—")}</td>
+
+   <td>
+
+   ${
+    pending
+    ?`
+     <div style="display:flex;gap:6px">
+
+      <button
+       class="success-btn"
+       onclick="approveTransaction(${Number(x.id)})">
+       Approve
+      </button>
+
+      <button
+       class="danger-btn"
+       onclick="rejectTransaction(${Number(x.id)})">
+       Reject
+      </button>
+
+     </div>
+    `
+    :"—"
+   }
+
+   </td>
+
+  </tr>
+
+  `;
+
+ }).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+async function approveTransaction(id){
+
+ if(!isAdmin)return;
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "approve_transaction",
+   {p_transaction_id:id}
+  );
+
+  if(error)
+   throw error;
+
+  await loadAdminDashboard();
+  await loadApplicationData();
+
+  alert(
+   "Transaction approved successfully."
+  );
+
+ }catch(err){
+
+  alert(
+   err.message||
+   "Unable to approve transaction."
+  );
+
+ }
+
+}
+
+async function rejectTransaction(id){
+
+ if(
+  !isAdmin||
+  !confirm("Reject this transaction?")
+ )
+  return;
+
+ try{
+
+  const{
+   error
+  }=await supabaseClient.rpc(
+   "admin_reject_transaction",
+   {p_transaction_id:id}
+  );
+
+  if(error)
+   throw error;
+
+  await loadAdminDashboard();
+  await loadApplicationData();
+
+  alert(
+   "Transaction rejected successfully."
+  );
+
+ }catch(err){
+
+  alert(
+   err.message||
+   "Unable to reject transaction."
+  );
+
+ }
+
+}
+
+/* ADMIN MPESA */
+
+async function loadAdminMpesa(){
+
+ const c=$("adminMpesaTable");
+
+ const{
+  data,
+  error
+ }=await supabaseClient
+  .from("mpesa_payments")
+  .select("*")
+  .order("created_at",{ascending:false});
+
+ if(error){
+
+  c.innerHTML=
+   '<div class="empty">Unable to load M-Pesa payments.</div>';
+
+  return;
+ }
+
+ if(!data?.length){
+
+  c.innerHTML=
+   '<div class="empty">No M-Pesa payments found.</div>';
+
+  return;
+ }
+
+ c.innerHTML=`
+
+ <div class="table-wrap">
+
+ <table>
+
+ <thead>
+
+ <tr>
+  <th>ID</th>
+  <th>Amount</th>
+  <th>Phone</th>
+  <th>Status</th>
+  <th>Receipt</th>
+  <th>Result</th>
+  <th>Date</th>
+ </tr>
+
+ </thead>
+
+ <tbody>
+
+ ${data.map(x=>`
+
+ <tr>
+
+  <td>#${Number(x.id)}</td>
+
+  <td>KES ${money(x.amount)}</td>
+
+  <td>${escapeHtml(x.phone||"—")}</td>
+
+  <td>${statusBadge(x.status)}</td>
+
+  <td>${escapeHtml(x.mpesa_receipt||"—")}</td>
+
+  <td>${escapeHtml(x.result_description||"—")}</td>
+
+  <td>${dateTime(x.created_at)}</td>
+
+ </tr>
+
+ `).join("")}
+
+ </tbody>
+
+ </table>
+
+ </div>
+
+ `;
+
+}
+
+/* ADMIN DASHBOARD */
+
+async function loadAdminDashboard(){
+
+ if(!isAdmin)return;
+
+ await Promise.all([
+
+  loadAdminCustomers(),
+  loadAdminStats(),
+  loadAdminOrders(),
+  loadAdminTransactions(),
+  loadAdminMpesa()
+
+ ]);
+
+}
+
+/* LOAD EVERYTHING */
+
+async function loadApplicationData(){
+
+ if(!currentUser)return;
+
+ await Promise.all([
+
+  loadProfile(),
+  loadBalance(),
+  loadDashboardStats(),
+  loadAvailableOrders(),
+  loadMatchedOrders(),
+  loadTransactions(),
+  loadBalanceHistory(),
+  loadOrderHistory()
+
+ ]);
+
+ await checkAdmin();
+
+}
+
+async function loadApplication(){
+
+ if(applicationLoading)return;
+
+ applicationLoading=true;
+
+ try{
+
+  $("authPage").classList.add("hidden");
+  $("application").classList.remove("hidden");
+
+  $("accountEmail").textContent=
+   currentUser?.email||"";
+
+  await loadApplicationData();
+
+ }catch(err){
+
+  console.error(err);
+
+ }finally{
+
+  applicationLoading=false;
+
+ }
+
+}
+
+/* AUTH STATE */
+
+supabaseClient.auth.onAuthStateChange(
+ (event,session)=>{
+
+  if(session?.user){
+
+   currentUser=session.user;
+
+   setTimeout(
+    ()=>loadApplication(),
+    0
+   );
+
+  }else{
+
+   currentUser=null;
+   currentProfile=null;
+   isAdmin=false;
+
+   $("application")
+    .classList
+    .add("hidden");
+
+   $("authPage")
+    .classList
+    .remove("hidden");
+
+  }
+
+ }
+);
+
+/* REFRESH */
+
+$("refreshOrdersButton").onclick=async()=>{
+
+ await loadAvailableOrders();
+ await loadDashboardStats();
+
+};
+
+/* INITIALIZE */
+
+async function initializeApp(){
+
+ try{
+
+  const{
+   data,
+   error
+  }=await supabaseClient.auth.getSession();
+
+  if(error)
+   throw error;
+
+  if(data.session?.user){
+
+   currentUser=data.session.user;
+
+   await loadApplication();
+
+  }else{
+
+   $("authPage")
+    .classList
+    .remove("hidden");
+
+   $("application")
+    .classList
+    .add("hidden");
+
+  }
+
+ }catch(err){
+
+  console.error(err);
+
+  $("authPage")
+   .classList
+   .remove("hidden");
+
+  $("application")
+   .classList
+   .add("hidden");
+
+ }
+
+}
+
+initializeApp();
+
+</script>
+
+</body>
+</html>
