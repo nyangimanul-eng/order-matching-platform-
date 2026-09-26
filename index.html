@@ -1,1 +1,2216 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OrderMatch</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f3f4f6;
+  color:#111827
+}
+.hidden{display:none!important}
+header{
+  background:#111827;
+  color:white;
+  padding:16px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  position:sticky;
+  top:0;
+  z-index:20
+}
+.logo{
+  font-size:22px;
+  font-weight:bold
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding:20px
+}
+.card{
+  background:white;
+  border-radius:14px;
+  padding:20px;
+  margin-bottom:18px;
+  box-shadow:0 3px 15px #0000000d
+}
+h1,h2,h3{margin-top:0}
+input,select,button{
+  width:100%;
+  padding:12px;
+  border-radius:9px;
+  border:1px solid #d1d5db;
+  font-size:15px
+}
+input,select{background:white}
+button{
+  cursor:pointer;
+  border:none;
+  background:#2563eb;
+  color:white;
+  font-weight:bold
+}
+button:hover{opacity:.9}
+.secondary-btn{
+  background:#374151;
+  color:white;
+  padding:8px 12px;
+  width:auto
+}
+.danger-btn{
+  background:#dc2626;
+  color:white;
+  padding:8px 12px;
+  width:auto
+}
+.success-btn{
+  background:#16a34a;
+  color:white;
+  padding:8px 12px;
+  width:auto
+}
+.form-group{
+  margin-bottom:12px
+}
+.message{
+  padding:12px;
+  border-radius:8px;
+  margin:10px 0
+}
+.message.error{
+  background:#fee2e2;
+  color:#991b1b
+}
+.message.success{
+  background:#dcfce7;
+  color:#166534
+}
+.nav{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:18px
+}
+.nav button{
+  width:auto;
+  background:#374151
+}
+.nav button.active{
+  background:#2563eb
+}
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px
+}
+.stat{
+  background:white;
+  padding:18px;
+  border-radius:14px;
+  box-shadow:0 3px 15px #0000000d
+}
+.stat-title{
+  color:#6b7280;
+  font-size:14px
+}
+.stat-value{
+  font-size:25px;
+  font-weight:bold;
+  margin-top:7px
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px
+}
+th,td{
+  padding:11px 8px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+  font-size:14px
+}
+th{
+  background:#f9fafb
+}
+.table-wrap{
+  overflow-x:auto
+}
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold
+}
+.badge.available{background:#dbeafe;color:#1d4ed8}
+.badge.matched{background:#fef3c7;color:#92400e}
+.badge.completed{background:#dcfce7;color:#166534}
+.badge.cancelled,.badge.rejected,.badge.failed{
+  background:#fee2e2;color:#991b1b
+}
+.badge.pending{background:#fef3c7;color:#92400e}
+.empty{
+  padding:20px;
+  text-align:center;
+  color:#6b7280
+}
+.row-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap
+}
+.customer-modal{
+  position:fixed;
+  inset:0;
+  background:#11182799;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  z-index:100
+}
+.customer-modal-card{
+  width:100%;
+  max-width:650px;
+  background:white;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 20px 60px #0003;
+  max-height:90vh;
+  overflow:auto
+}
+.modal-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:15px
+}
+.modal-head button{
+  width:auto
+}
+.flex{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap
+}
+.flex>*{
+  flex:1
+}
+.small{
+  color:#6b7280;
+  font-size:13px
+}
+.order-card{
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:15px;
+  margin-bottom:10px
+}
+@media(max-width:600px){
+  .container{padding:12px}
+  header{padding:13px}
+  table{min-width:700px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="logo">OrderMatch</div>
+  <button id="logoutBtn" class="secondary-btn hidden" type="button">Logout</button>
+</header>
+
+<div class="container">
+
+<!-- AUTH -->
+<section id="authSection">
+
+  <div class="card" id="loginCard">
+    <h2>Login</h2>
+
+    <div id="loginMessage"></div>
+
+    <div class="form-group">
+      <input id="loginEmail" type="email" placeholder="Email">
+    </div>
+
+    <div class="form-group">
+      <input id="loginPassword" type="password" placeholder="Password">
+    </div>
+
+    <button id="loginBtn" type="button">Login</button>
+
+    <p>
+      <button id="showSignupBtn" class="secondary-btn" type="button">
+        Create account
+      </button>
+    </p>
+
+    <p>
+      <button id="forgotBtn" class="secondary-btn" type="button">
+        Forgot password?
+      </button>
+    </p>
+  </div>
+
+  <div class="card hidden" id="signupCard">
+    <h2>Create Account</h2>
+
+    <div id="signupMessage"></div>
+
+    <div class="form-group">
+      <input id="signupName" type="text" placeholder="Full name">
+    </div>
+
+    <div class="form-group">
+      <input id="signupPhone" type="text" placeholder="M-Pesa phone">
+    </div>
+
+    <div class="form-group">
+      <input id="signupEmail" type="email" placeholder="Email">
+    </div>
+
+    <div class="form-group">
+      <input id="signupPassword" type="password" placeholder="Password">
+    </div>
+
+    <button id="signupBtn" type="button">Create Account</button>
+
+    <p>
+      <button id="showLoginBtn" class="secondary-btn" type="button">
+        Back to Login
+      </button>
+    </p>
+  </div>
+
+  <div class="card hidden" id="resetCard">
+    <h2>Reset Password</h2>
+
+    <div id="resetMessage"></div>
+
+    <div class="form-group">
+      <input id="resetEmail" type="email" placeholder="Your email">
+    </div>
+
+    <button id="resetBtn" type="button">Send Reset Email</button>
+
+    <p>
+      <button id="backLoginBtn" class="secondary-btn" type="button">
+        Back to Login
+      </button>
+    </p>
+  </div>
+
+</section>
+
+<!-- APP -->
+<section id="appSection" class="hidden">
+
+  <div class="nav">
+    <button data-section="dashboardSection" class="nav-btn active">Dashboard</button>
+    <button data-section="depositSection" class="nav-btn">Deposit</button>
+    <button data-section="ordersSection" class="nav-btn">Orders</button>
+    <button data-section="matchesSection" class="nav-btn">My Matches</button>
+    <button data-section="transactionsSection" class="nav-btn">Transactions</button>
+    <button data-section="profileSection" class="nav-btn">Profile</button>
+    <button id="adminNavBtn" data-section="adminSection" class="nav-btn hidden">Admin</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <section id="dashboardSection">
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-title">Balance</div>
+        <div class="stat-value" id="dashBalance">KES 0.00</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Available Orders</div>
+        <div class="stat-value" id="dashAvailable">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">My Matches</div>
+        <div class="stat-value" id="dashMatches">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Pending Transactions</div>
+        <div class="stat-value" id="dashPending">0</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Welcome</h2>
+      <p id="welcomeText">Welcome to OrderMatch.</p>
+      <p class="small">
+        Match available customer orders and track your account activity.
+      </p>
+    </div>
+
+  </section>
+
+  <!-- DEPOSIT -->
+  <section id="depositSection" class="hidden">
+
+    <div class="card">
+      <h2>Deposit via M-Pesa</h2>
+
+      <div id="depositMessage"></div>
+
+      <div class="form-group">
+        <input id="depositPhone" type="text" placeholder="M-Pesa phone number">
+      </div>
+
+      <div class="form-group">
+        <input id="depositAmount" type="number" min="1" step="1" placeholder="Amount in KES">
+      </div>
+
+      <button id="depositBtn" type="button">Send M-Pesa STK Push</button>
+
+      <p class="small">
+        Enter the amount and confirm the M-Pesa prompt on your phone.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>Recent M-Pesa Deposits</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Receipt</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="mpesaHistoryBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ORDERS -->
+  <section id="ordersSection" class="hidden">
+
+    <div class="card">
+      <h2>Available Orders</h2>
+      <div id="ordersMessage"></div>
+      <div id="availableOrders"></div>
+    </div>
+
+  </section>
+
+  <!-- MATCHES -->
+  <section id="matchesSection" class="hidden">
+
+    <div class="card">
+      <h2>My Matched Orders</h2>
+      <div id="matchesMessage"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Matched</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="matchesBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- TRANSACTIONS -->
+  <section id="transactionsSection" class="hidden">
+
+    <div class="card">
+      <h2>Transactions</h2>
+
+      <div class="flex">
+        <input id="withdrawAmount" type="number" min="10" placeholder="Withdrawal amount">
+        <input id="withdrawPhone" type="text" placeholder="M-Pesa phone">
+        <button id="withdrawBtn" type="button">Request Withdrawal</button>
+      </div>
+
+      <div id="withdrawMessage"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Reference</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- PROFILE -->
+  <section id="profileSection" class="hidden">
+
+    <div class="card">
+      <h2>My Profile</h2>
+
+      <div id="profileMessage"></div>
+
+      <div class="form-group">
+        <label>Full name</label>
+        <input id="profileName" type="text">
+      </div>
+
+      <div class="form-group">
+        <label>M-Pesa phone</label>
+        <input id="profilePhone" type="text">
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input id="profileEmail" type="email" disabled>
+      </div>
+
+      <button id="saveProfileBtn" type="button">Save Profile</button>
+
+      <p class="small" id="accountIdText"></p>
+    </div>
+
+  </section>
+
+  <!-- ADMIN -->
+  <section id="adminSection" class="hidden">
+
+    <div class="stats">
+
+      <div class="stat">
+        <div class="stat-title">Total Customers</div>
+        <div class="stat-value" id="adminCustomersCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Total Orders</div>
+        <div class="stat-value" id="adminOrdersCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">Pending Transactions</div>
+        <div class="stat-value" id="adminPendingCount">0</div>
+      </div>
+
+      <div class="stat">
+        <div class="stat-title">M-Pesa Payments</div>
+        <div class="stat-value" id="adminMpesaCount">0</div>
+      </div>
+
+    </div>
+
+    <div class="card">
+      <h2>Customer Management</h2>
+
+      <div id="adminCustomerMessage"></div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>M-Pesa Phone</th>
+              <th>Balance</th>
+              <th>Joined</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="adminCustomersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Create New Order</h2>
+
+      <div id="createOrderMessage"></div>
+
+      <div class="form-group">
+        <input id="newOrderProduct" type="text" placeholder="Product name">
+      </div>
+
+      <div class="form-group">
+        <input id="newOrderAmount" type="number" min="1" placeholder="Amount">
+      </div>
+
+      <button id="createOrderBtn" type="button">Create Order</button>
+    </div>
+
+    <div class="card">
+      <h2>Manage Orders</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Product</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="adminOrdersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Transaction Requests</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>User</th>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Reference</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody id="adminTransactionsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>M-Pesa Payments</h2>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Amount</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Receipt</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+
+          <tbody id="adminMpesaBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+</section>
+
+<!-- CUSTOMER MODAL -->
+<div id="customerModal" class="customer-modal hidden">
+
+  <div class="customer-modal-card">
+
+    <div class="modal-head">
+      <h2>Customer Details</h2>
+
+      <button id="customerModalClose" class="danger-btn" type="button">
+        Close
+      </button>
+    </div>
+
+    <div id="customerModalMessage"></div>
+
+    <div id="customerDetailsContent">
+      <div class="empty">Loading customer details...</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://bdflurarenkcvcnttrya.supabase.co";
+
+/*
+ * Keep the existing publishable/anon key from your current OrderMatch file here.
+ * Do NOT use the service-role key in this HTML file.
+ */
+const SUPABASE_ANON_KEY = "YOUR_EXISTING_SUPABASE_ANON_KEY";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+let currentUser = null;
+let currentProfile = null;
+let isAdmin = false;
+let allCustomers = [];
+
+const $ = id => document.getElementById(id);
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function money(value){
+  return "KES " + Number(value || 0).toLocaleString("en-KE",{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+}
+
+function formatDate(value){
+  if(!value) return "—";
+  const d = new Date(value);
+  if(Number.isNaN(d.getTime())) return "—";
+  return d.toLocaleString("en-KE");
+}
+
+function showMessage(id,text,type="success"){
+  const el=$(id);
+  if(!el)return;
+  el.innerHTML=`<div class="message ${type}">${escapeHtml(text)}</div>`;
+}
+
+function clearMessage(id){
+  const el=$(id);
+  if(el)el.innerHTML="";
+}
+
+function getCustomerId(customer){
+  const candidates=[
+    customer?.user_id,
+    customer?.id,
+    customer?.customer_id,
+    customer?.profile_id
+  ];
+
+  for(const value of candidates){
+    if(typeof value==="string" && value.trim()!==""){
+      const v=value.trim();
+
+      if(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+      ){
+        return v;
+      }
+    }
+  }
+
+  return null;
+}
+
+async function checkAdmin(){
+  try{
+    const {data,error}=await supabaseClient.rpc("is_admin");
+
+    if(error){
+      console.error("Admin check:",error);
+      return false;
+    }
+
+    return data===true;
+  }catch(error){
+    console.error(error);
+    return false;
+  }
+}
+
+async function loadProfile(){
+  if(!currentUser)return;
+
+  const {data,error}=await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id",currentUser.id)
+    .maybeSingle();
+
+  if(error){
+    console.error("Profile:",error);
+    return;
+  }
+
+  currentProfile=data;
+
+  $("profileName").value=data?.full_name || "";
+  $("profilePhone").value=data?.phone || "";
+  $("profileEmail").value=currentUser.email || "";
+
+  $("depositPhone").value=data?.phone || "";
+  $("withdrawPhone").value=data?.phone || "";
+
+  $("welcomeText").textContent=
+    `Welcome, ${data?.full_name || currentUser.email || "Customer"}.`;
+
+  $("accountIdText").textContent=
+    `Account ID: ${currentUser.id}`;
+}
+
+async function loadBalance(){
+  if(!currentUser)return;
+
+  const {data,error}=await supabaseClient
+    .from("account_balances")
+    .select("balance")
+    .eq("user_id",currentUser.id)
+    .maybeSingle();
+
+  if(error){
+    console.error("Balance:",error);
+    return 0;
+  }
+
+  const balance=Number(data?.balance || 0);
+
+  $("dashBalance").textContent=money(balance);
+
+  return balance;
+}
+
+async function loadDashboard(){
+  await loadBalance();
+
+  const {data:orders}=await supabaseClient
+    .from("orders")
+    .select("id")
+    .eq("status","available");
+
+  $("dashAvailable").textContent=(orders||[]).length;
+
+  const {data:matches}=await supabaseClient
+    .from("order_matches")
+    .select("id")
+    .eq("user_id",currentUser.id);
+
+  $("dashMatches").textContent=(matches||[]).length;
+
+  const {data:transactions}=await supabaseClient
+    .from("transactions")
+    .select("id")
+    .eq("user_id",currentUser.id)
+    .eq("status","pending");
+
+  $("dashPending").textContent=(transactions||[]).length;
+}
+
+async function loadAvailableOrders(){
+  const box=$("availableOrders");
+
+  box.innerHTML='<div class="empty">Loading orders...</div>';
+
+  const {data,error}=await supabaseClient
+    .from("orders")
+    .select("*")
+    .eq("status","available")
+    .order("created_at",{ascending:false});
+
+  if(error){
+    box.innerHTML=
+      `<div class="message error">${escapeHtml(error.message)}</div>`;
+    return;
+  }
+
+  if(!data?.length){
+    box.innerHTML='<div class="empty">No available orders.</div>';
+    return;
+  }
+
+  box.innerHTML=data.map(order=>`
+    <div class="order-card">
+      <h3>${escapeHtml(order.product_name)}</h3>
+      <p><strong>Amount:</strong> ${money(order.amount)}</p>
+      <p class="small">Created: ${formatDate(order.created_at)}</p>
+      <button
+        class="success-btn"
+        type="button"
+        onclick="matchOrder(${Number(order.id)})">
+        Match Order
+      </button>
+    </div>
+  `).join("");
+}
+
+async function matchOrder(orderId){
+  clearMessage("ordersMessage");
+
+  const {data,error}=await supabaseClient
+    .rpc("match_order",{p_order_id:Number(orderId)});
+
+  if(error){
+    showMessage("ordersMessage",error.message,"error");
+    return;
+  }
+
+  showMessage("ordersMessage","Order matched successfully.","success");
+
+  await loadAvailableOrders();
+  await loadMatches();
+  await loadDashboard();
+}
+
+async function loadMatches(){
+  const body=$("matchesBody");
+
+  body.innerHTML=
+    `<tr><td colspan="5" class="empty">Loading...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .from("order_matches")
+    .select("id,order_id,matched_at,status")
+    .eq("user_id",currentUser.id)
+    .order("matched_at",{ascending:false});
+
+  if(error){
+    body.innerHTML=
+      `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  if(!data?.length){
+    body.innerHTML=
+      `<tr><td colspan="5" class="empty">No matched orders.</td></tr>`;
+    return;
+  }
+
+  const rows=[];
+
+  for(const match of data){
+    const {data:order}=await supabaseClient
+      .from("orders")
+      .select("id,product_name,amount,status")
+      .eq("id",match.order_id)
+      .maybeSingle();
+
+    rows.push(`
+      <tr>
+        <td>${escapeHtml(order?.product_name || "—")}</td>
+        <td>${money(order?.amount)}</td>
+        <td>
+          <span class="badge ${escapeHtml(order?.status || "matched")}">
+            ${escapeHtml(order?.status || "matched")}
+          </span>
+        </td>
+        <td>${formatDate(match.matched_at)}</td>
+        <td>
+          ${
+            order?.status==="matched"
+            ? `<button
+                 class="success-btn"
+                 type="button"
+                 onclick="completeOrder(${Number(match.order_id)})">
+                 Complete
+               </button>`
+            : "—"
+          }
+        </td>
+      </tr>
+    `);
+  }
+
+  body.innerHTML=rows.join("");
+}
+
+async function completeOrder(orderId){
+  const {data,error}=await supabaseClient
+    .rpc("complete_order",{p_order_id:Number(orderId)});
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
+  alert("Order completed successfully.");
+
+  await loadMatches();
+  await loadDashboard();
+}
+
+async function loadTransactions(){
+  const body=$("transactionsBody");
+
+  body.innerHTML=
+    `<tr><td colspan="5" class="empty">Loading...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .from("transactions")
+    .select("*")
+    .eq("user_id",currentUser.id)
+    .order("created_at",{ascending:false});
+
+  if(error){
+    body.innerHTML=
+      `<tr><td colspan="5">${escapeHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  if(!data?.length){
+    body.innerHTML=
+      `<tr><td colspan="5" class="empty">No transactions yet.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML=data.map(t=>`
+    <tr>
+      <td>${escapeHtml(t.type || "—")}</td>
+      <td>${money(t.amount)}</td>
+      <td>
+        <span class="badge ${escapeHtml(t.status || "pending")}">
+          ${escapeHtml(t.status || "—")}
+        </span>
+      </td>
+      <td>${escapeHtml(t.reference || "—")}</td>
+      <td>${formatDate(t.created_at)}</td>
+    </tr>
+  `).join("");
+}
+
+async function loadMpesaHistory(){
+  const body=$("mpesaHistoryBody");
+
+  const {data,error}=await supabaseClient
+    .from("mpesa_payments")
+    .select("*")
+    .eq("user_id",currentUser.id)
+    .order("created_at",{ascending:false})
+    .limit(20);
+
+  if(error){
+    body.innerHTML=
+      `<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`;
+    return;
+  }
+
+  if(!data?.length){
+    body.innerHTML=
+      `<tr><td colspan="4" class="empty">No M-Pesa deposits yet.</td></tr>`;
+    return;
+  }
+
+  body.innerHTML=data.map(p=>`
+    <tr>
+      <td>${money(p.amount)}</td>
+      <td>
+        <span class="badge ${escapeHtml(p.status || "pending")}">
+          ${escapeHtml(p.status || "—")}
+        </span>
+      </td>
+      <td>${escapeHtml(p.mpesa_receipt || "—")}</td>
+      <td>${formatDate(p.created_at)}</td>
+    </tr>
+  `).join("");
+}
+
+async function makeDeposit(){
+  const phone=$("depositPhone").value.trim();
+  const amount=Number($("depositAmount").value);
+
+  clearMessage("depositMessage");
+
+  if(!phone){
+    showMessage("depositMessage","Enter your M-Pesa phone number.","error");
+    return;
+  }
+
+  if(!amount || amount<=0){
+    showMessage("depositMessage","Enter a valid amount.","error");
+    return;
+  }
+
+  $("depositBtn").disabled=true;
+  $("depositBtn").textContent="Sending...";
+
+  try{
+
+    const {data,error}=await supabaseClient.functions.invoke(
+      "Mpesa-stk-push",
+      {
+        body:{
+          phone,
+          amount
+        }
+      }
+    );
+
+    if(error)throw error;
+
+    if(data?.error){
+      throw new Error(data.error);
+    }
+
+    showMessage(
+      "depositMessage",
+      "M-Pesa STK push sent. Check your phone and enter your PIN.",
+      "success"
+    );
+
+    $("depositAmount").value="";
+
+    await loadMpesaHistory();
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      "depositMessage",
+      error.message || "Unable to start M-Pesa payment.",
+      "error"
+    );
+
+  }finally{
+
+    $("depositBtn").disabled=false;
+    $("depositBtn").textContent="Send M-Pesa STK Push";
+
+  }
+}
+
+async function requestWithdrawal(){
+  const amount=Number($("withdrawAmount").value);
+  const phone=$("withdrawPhone").value.trim();
+
+  clearMessage("withdrawMessage");
+
+  if(!amount || amount<10){
+    showMessage(
+      "withdrawMessage",
+      "Minimum withdrawal request is KES 10.",
+      "error"
+    );
+    return;
+  }
+
+  if(!phone){
+    showMessage(
+      "withdrawMessage",
+      "Enter the M-Pesa phone number.",
+      "error"
+    );
+    return;
+  }
+
+  const {data,error}=await supabaseClient
+    .rpc("request_withdrawal",{
+      p_amount:amount,
+      p_reference:phone
+    });
+
+  if(error){
+    showMessage("withdrawMessage",error.message,"error");
+    return;
+  }
+
+  showMessage(
+    "withdrawMessage",
+    "Withdrawal request submitted successfully.",
+    "success"
+  );
+
+  $("withdrawAmount").value="";
+
+  await loadTransactions();
+  await loadDashboard();
+}
+
+async function saveProfile(){
+  clearMessage("profileMessage");
+
+  const full_name=$("profileName").value.trim();
+  const phone=$("profilePhone").value.trim();
+
+  const {error}=await supabaseClient
+    .from("profiles")
+    .update({
+      full_name,
+      phone
+    })
+    .eq("id",currentUser.id);
+
+  if(error){
+    showMessage("profileMessage",error.message,"error");
+    return;
+  }
+
+  showMessage("profileMessage","Profile updated successfully.","success");
+
+  await loadProfile();
+}
+
+async function loadAdminData(){
+
+  if(!isAdmin)return;
+
+  await loadAdminCustomers();
+  await loadAdminOrders();
+  await loadAdminTransactions();
+  await loadAdminMpesa();
+
+}
+
+async function loadAdminCustomers(){
+
+  const body=$("adminCustomersBody");
+
+  body.innerHTML=
+    `<tr><td colspan="6" class="empty">Loading customers...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .rpc("admin_get_customers");
+
+  if(error){
+
+    console.error("Admin customers:",error);
+
+    body.innerHTML=
+      `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+
+    return;
+  }
+
+  allCustomers=data || [];
+
+  $("adminCustomersCount").textContent=allCustomers.length;
+
+  if(!allCustomers.length){
+
+    body.innerHTML=
+      `<tr><td colspan="6" class="empty">No customers found.</td></tr>`;
+
+    return;
+  }
+
+  body.innerHTML=allCustomers.map(customer=>{
+
+    const customerId=getCustomerId(customer);
+
+    const name=
+      customer.full_name ||
+      customer.name ||
+      "—";
+
+    const email=
+      customer.email ||
+      "—";
+
+    const phone=
+      customer.phone ||
+      customer.mpesa_phone ||
+      "—";
+
+    const balance=
+      customer.balance ||
+      0;
+
+    const joined=
+      customer.created_at ||
+      customer.joined_at;
+
+    /*
+     * IMPORTANT FIX:
+     * Use single quotes around the HTML onclick attribute.
+     * This prevents the UUID quotes from breaking the button.
+     */
+    const action=customerId
+      ? `
+        <button
+          class="secondary-btn"
+          type="button"
+          onclick="viewCustomer('${customerId}')">
+          View
+        </button>
+      `
+      : "—";
+
+    return `
+      <tr>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(email)}</td>
+        <td>${escapeHtml(phone)}</td>
+        <td>${money(balance)}</td>
+        <td>${formatDate(joined)}</td>
+        <td>${action}</td>
+      </tr>
+    `;
+
+  }).join("");
+
+}
+
+async function viewCustomer(customerId){
+
+  if(!isAdmin)return;
+
+  const id=String(customerId || "").trim();
+
+  const uuidRegex=
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+  if(!uuidRegex.test(id)){
+
+    alert("Invalid customer account ID.");
+
+    return;
+  }
+
+  const modal=$("customerModal");
+  const message=$("customerModalMessage");
+  const content=$("customerDetailsContent");
+
+  modal.classList.remove("hidden");
+
+  message.innerHTML="";
+
+  content.innerHTML=
+    `<div class="empty">Loading customer details...</div>`;
+
+  try{
+
+    const [
+      profileResult,
+      balanceResult,
+      transactionResult,
+      matchResult
+    ]=await Promise.all([
+
+      supabaseClient
+        .from("profiles")
+        .select("id,full_name,phone,created_at")
+        .eq("id",id)
+        .maybeSingle(),
+
+      supabaseClient
+        .from("account_balances")
+        .select("balance")
+        .eq("user_id",id)
+        .maybeSingle(),
+
+      supabaseClient
+        .from("transactions")
+        .select("id,type,amount,status,reference,created_at")
+        .eq("user_id",id)
+        .order("created_at",{ascending:false})
+        .limit(10),
+
+      supabaseClient
+        .from("order_matches")
+        .select("id,order_id,matched_at")
+        .eq("user_id",id)
+        .order("matched_at",{ascending:false})
+        .limit(10)
+
+    ]);
+
+    if(profileResult.error)
+      throw profileResult.error;
+
+    if(balanceResult.error)
+      throw balanceResult.error;
+
+    if(transactionResult.error)
+      throw transactionResult.error;
+
+    if(matchResult.error)
+      throw matchResult.error;
+
+    const customer=
+      allCustomers.find(
+        x=>getCustomerId(x)===id
+      ) || {};
+
+    const profile=
+      profileResult.data || {};
+
+    const balance=
+      Number(balanceResult.data?.balance || 0);
+
+    const transactions=
+      transactionResult.data || [];
+
+    const matches=
+      matchResult.data || [];
+
+    const email=
+      customer.email ||
+      profile.email ||
+      "—";
+
+    let transactionsHtml="";
+
+    if(transactions.length){
+
+      transactionsHtml=`
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Reference</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              ${transactions.map(t=>`
+                <tr>
+                  <td>${escapeHtml(t.type || "—")}</td>
+                  <td>${money(t.amount)}</td>
+                  <td>${escapeHtml(t.status || "—")}</td>
+                  <td>${escapeHtml(t.reference || "—")}</td>
+                  <td>${formatDate(t.created_at)}</td>
+                </tr>
+              `).join("")}
+
+            </tbody>
+          </table>
+        </div>
+      `;
+
+    }else{
+
+      transactionsHtml=
+        `<div class="empty">No transactions.</div>`;
+
+    }
+
+    let matchesHtml="";
+
+    if(matches.length){
+
+      matchesHtml=`
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Matched At</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              ${matches.map(m=>`
+                <tr>
+                  <td>${escapeHtml(m.order_id)}</td>
+                  <td>${formatDate(m.matched_at)}</td>
+                </tr>
+              `).join("")}
+
+            </tbody>
+          </table>
+        </div>
+      `;
+
+    }else{
+
+      matchesHtml=
+        `<div class="empty">No matched orders.</div>`;
+
+    }
+
+    content.innerHTML=`
+
+      <div class="card">
+
+        <h3>Account Information</h3>
+
+        <p>
+          <strong>Name:</strong>
+          ${escapeHtml(profile.full_name || customer.full_name || "—")}
+        </p>
+
+        <p>
+          <strong>Email:</strong>
+          ${escapeHtml(email)}
+        </p>
+
+        <p>
+          <strong>M-Pesa Phone:</strong>
+          ${escapeHtml(profile.phone || customer.phone || "—")}
+        </p>
+
+        <p>
+          <strong>Balance:</strong>
+          ${money(balance)}
+        </p>
+
+        <p>
+          <strong>Joined:</strong>
+          ${formatDate(profile.created_at || customer.created_at)}
+        </p>
+
+        <p>
+          <strong>Account ID:</strong>
+          <span class="small">${escapeHtml(id)}</span>
+        </p>
+
+      </div>
+
+      <div class="card">
+
+        <h3>Recent Transactions</h3>
+
+        ${transactionsHtml}
+
+      </div>
+
+      <div class="card">
+
+        <h3>Matched Orders</h3>
+
+        ${matchesHtml}
+
+      </div>
+    `;
+
+  }catch(error){
+
+    console.error("Customer View error:",error);
+
+    message.innerHTML=
+      `<div class="message error">
+        Unable to load customer details:
+        ${escapeHtml(error.message || "Unknown error")}
+      </div>`;
+
+    content.innerHTML=
+      `<div class="empty">
+        Customer details could not be loaded.
+      </div>`;
+  }
+}
+
+async function loadAdminOrders(){
+
+  const body=$("adminOrdersBody");
+
+  body.innerHTML=
+    `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .from("orders")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+
+    body.innerHTML=
+      `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+
+    return;
+  }
+
+  $("adminOrdersCount").textContent=(data||[]).length;
+
+  if(!data?.length){
+
+    body.innerHTML=
+      `<tr><td colspan="6" class="empty">No orders.</td></tr>`;
+
+    return;
+  }
+
+  body.innerHTML=data.map(order=>`
+
+    <tr>
+
+      <td>${escapeHtml(order.id)}</td>
+
+      <td>${escapeHtml(order.product_name)}</td>
+
+      <td>${money(order.amount)}</td>
+
+      <td>
+        <span class="badge ${escapeHtml(order.status || "")}">
+          ${escapeHtml(order.status || "—")}
+        </span>
+      </td>
+
+      <td>${formatDate(order.created_at)}</td>
+
+      <td>
+
+        ${
+          order.status!=="cancelled" &&
+          order.status!=="completed"
+          ? `<button
+               class="danger-btn"
+               type="button"
+               onclick="cancelAdminOrder(${Number(order.id)})">
+               Cancel
+             </button>`
+          : "—"
+        }
+
+      </td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+async function createAdminOrder(){
+
+  const product=$("newOrderProduct").value.trim();
+  const amount=Number($("newOrderAmount").value);
+
+  clearMessage("createOrderMessage");
+
+  if(!product){
+
+    showMessage(
+      "createOrderMessage",
+      "Enter the product name.",
+      "error"
+    );
+
+    return;
+  }
+
+  if(!amount || amount<=0){
+
+    showMessage(
+      "createOrderMessage",
+      "Enter a valid amount.",
+      "error"
+    );
+
+    return;
+  }
+
+  const {data,error}=await supabaseClient
+    .rpc("admin_create_order",{
+      p_product_name:product,
+      p_amount:amount
+    });
+
+  if(error){
+
+    showMessage(
+      "createOrderMessage",
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  showMessage(
+    "createOrderMessage",
+    "Order created successfully.",
+    "success"
+  );
+
+  $("newOrderProduct").value="";
+  $("newOrderAmount").value="";
+
+  await loadAdminOrders();
+  await loadDashboard();
+
+}
+
+async function cancelAdminOrder(orderId){
+
+  if(!confirm("Cancel this order?"))return;
+
+  const {data,error}=await supabaseClient
+    .rpc("admin_cancel_order",{
+      p_order_id:Number(orderId)
+    });
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+  alert("Order cancelled.");
+
+  await loadAdminOrders();
+  await loadDashboard();
+
+}
+
+async function loadAdminTransactions(){
+
+  const body=$("adminTransactionsBody");
+
+  body.innerHTML=
+    `<tr><td colspan="7" class="empty">Loading...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .from("transactions")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+
+    body.innerHTML=
+      `<tr><td colspan="7">${escapeHtml(error.message)}</td></tr>`;
+
+    return;
+  }
+
+  const pending=
+    (data||[]).filter(t=>t.status==="pending").length;
+
+  $("adminPendingCount").textContent=pending;
+
+  if(!data?.length){
+
+    body.innerHTML=
+      `<tr><td colspan="7" class="empty">No transactions.</td></tr>`;
+
+    return;
+  }
+
+  body.innerHTML=data.map(t=>`
+
+    <tr>
+
+      <td>${escapeHtml(t.id)}</td>
+
+      <td>${escapeHtml(t.user_id || "—")}</td>
+
+      <td>${escapeHtml(t.type || "—")}</td>
+
+      <td>${money(t.amount)}</td>
+
+      <td>${escapeHtml(t.status || "—")}</td>
+
+      <td>${escapeHtml(t.reference || "—")}</td>
+
+      <td>
+
+        ${
+          t.status==="pending"
+          ? `
+            <div class="row-actions">
+
+              <button
+                class="success-btn"
+                type="button"
+                onclick="approveAdminTransaction(${Number(t.id)})">
+                Approve
+              </button>
+
+              <button
+                class="danger-btn"
+                type="button"
+                onclick="rejectAdminTransaction(${Number(t.id)})">
+                Reject
+              </button>
+
+            </div>
+          `
+          : "—"
+        }
+
+      </td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+async function approveAdminTransaction(id){
+
+  if(!confirm("Approve this transaction?"))return;
+
+  const {data,error}=await supabaseClient
+    .rpc("approve_transaction",{
+      p_transaction_id:Number(id)
+    });
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+  alert("Transaction approved.");
+
+  await loadAdminTransactions();
+  await loadDashboard();
+
+}
+
+async function rejectAdminTransaction(id){
+
+  if(!confirm("Reject this transaction?"))return;
+
+  const {data,error}=await supabaseClient
+    .rpc("admin_reject_transaction",{
+      p_transaction_id:Number(id)
+    });
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+  alert("Transaction rejected.");
+
+  await loadAdminTransactions();
+
+}
+
+async function loadAdminMpesa(){
+
+  const body=$("adminMpesaBody");
+
+  body.innerHTML=
+    `<tr><td colspan="6" class="empty">Loading...</td></tr>`;
+
+  const {data,error}=await supabaseClient
+    .from("mpesa_payments")
+    .select("*")
+    .order("created_at",{ascending:false});
+
+  if(error){
+
+    body.innerHTML=
+      `<tr><td colspan="6">${escapeHtml(error.message)}</td></tr>`;
+
+    return;
+  }
+
+  $("adminMpesaCount").textContent=(data||[]).length;
+
+  if(!data?.length){
+
+    body.innerHTML=
+      `<tr><td colspan="6" class="empty">No M-Pesa payments.</td></tr>`;
+
+    return;
+  }
+
+  body.innerHTML=data.map(p=>`
+
+    <tr>
+
+      <td>${escapeHtml(p.id)}</td>
+
+      <td>${money(p.amount)}</td>
+
+      <td>${escapeHtml(p.phone || "—")}</td>
+
+      <td>${escapeHtml(p.status || "—")}</td>
+
+      <td>${escapeHtml(p.mpesa_receipt || "—")}</td>
+
+      <td>${formatDate(p.created_at)}</td>
+
+    </tr>
+
+  `).join("");
+
+}
+
+async function login(){
+
+  clearMessage("loginMessage");
+
+  const email=$("loginEmail").value.trim();
+  const password=$("loginPassword").value;
+
+  if(!email || !password){
+
+    showMessage(
+      "loginMessage",
+      "Enter your email and password.",
+      "error"
+    );
+
+    return;
+  }
+
+  $("loginBtn").disabled=true;
+
+  const {data,error}=await supabaseClient.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  $("loginBtn").disabled=false;
+
+  if(error){
+
+    showMessage(
+      "loginMessage",
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  currentUser=data.user;
+
+  await startApp();
+
+}
+
+async function signup(){
+
+  clearMessage("signupMessage");
+
+  const name=$("signupName").value.trim();
+  const phone=$("signupPhone").value.trim();
+  const email=$("signupEmail").value.trim();
+  const password=$("signupPassword").value;
+
+  if(!name || !phone || !email || !password){
+
+    showMessage(
+      "signupMessage",
+      "Complete all fields.",
+      "error"
+    );
+
+    return;
+  }
+
+  const {data,error}=await supabaseClient.auth.signUp({
+
+    email,
+    password,
+
+    options:{
+      data:{
+        full_name:name,
+        phone:phone
+      }
+    }
+
+  });
+
+  if(error){
+
+    showMessage(
+      "signupMessage",
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  showMessage(
+    "signupMessage",
+    "Account created. Check your email if confirmation is required.",
+    "success"
+  );
+
+}
+
+async function logout(){
+
+  await supabaseClient.auth.signOut();
+
+  currentUser=null;
+  currentProfile=null;
+  isAdmin=false;
+
+  $("appSection").classList.add("hidden");
+  $("authSection").classList.remove("hidden");
+  $("logoutBtn").classList.add("hidden");
+
+  $("loginCard").classList.remove("hidden");
+  $("signupCard").classList.add("hidden");
+  $("resetCard").classList.add("hidden");
+
+}
+
+async function startApp(){
+
+  if(!currentUser)return;
+
+  $("authSection").classList.add("hidden");
+  $("appSection").classList.remove("hidden");
+  $("logoutBtn").classList.remove("hidden");
+
+  await loadProfile();
+
+  isAdmin=await checkAdmin();
+
+  if(isAdmin){
+
+    $("adminNavBtn").classList.remove("hidden");
+
+    await loadAdminData();
+
+  }else{
+
+    $("adminNavBtn").classList.add("hidden");
+
+  }
+
+  await loadDashboard();
+  await loadAvailableOrders();
+  await loadMatches();
+  await loadTransactions();
+  await loadMpesaHistory();
+
+}
+
+function showSection(sectionId){
+
+  document.querySelectorAll(
+    "#appSection > section"
+  ).forEach(section=>{
+    section.classList.add("hidden");
+  });
+
+  $(sectionId).classList.remove("hidden");
+
+  document.querySelectorAll(".nav-btn").forEach(btn=>{
+    btn.classList.remove("active");
+  });
+
+  const active=document.querySelector(
+    `.nav-btn[data-section="${sectionId}"]`
+  );
+
+  if(active)active.classList.add("active");
+
+}
+
+$("loginBtn").addEventListener("click",login);
+
+$("signupBtn").addEventListener("click",signup);
+
+$("logoutBtn").addEventListener("click",logout);
+
+$("showSignupBtn").addEventListener("click",()=>{
+
+  $("loginCard").classList.add("hidden");
+  $("signupCard").classList.remove("hidden");
+  $("resetCard").classList.add("hidden");
+
+});
+
+$("showLoginBtn").addEventListener("click",()=>{
+
+  $("loginCard").classList.remove("hidden");
+  $("signupCard").classList.add("hidden");
+  $("resetCard").classList.add("hidden");
+
+});
+
+$("forgotBtn").addEventListener("click",()=>{
+
+  $("loginCard").classList.add("hidden");
+  $("signupCard").classList.add("hidden");
+  $("resetCard").classList.remove("hidden");
+
+});
+
+$("backLoginBtn").addEventListener("click",()=>{
+
+  $("loginCard").classList.remove("hidden");
+  $("signupCard").classList.add("hidden");
+  $("resetCard").classList.add("hidden");
+
+});
+
+$("resetBtn").addEventListener("click",async()=>{
+
+  clearMessage("resetMessage");
+
+  const email=$("resetEmail").value.trim();
+
+  if(!email){
+
+    showMessage(
+      "resetMessage",
+      "Enter your email.",
+      "error"
+    );
+
+    return;
+  }
+
+  const {error}=await supabaseClient.auth.resetPasswordForEmail(
+    email,
+    {
+      redirectTo:
+        "https://nyangimanul-eng.github.io/order-matching-platform-/"
+    }
+  );
+
+  if(error){
+
+    showMessage(
+      "resetMessage",
+      error.message,
+      "error"
+    );
+
+    return;
+  }
+
+  showMessage(
+    "resetMessage",
+    "Password reset email sent.",
+    "success"
+  );
+
+});
+
+document.querySelectorAll(".nav-btn").forEach(btn=>{
+
+  btn.addEventListener("click",async()=>{
+
+    const section=btn.dataset.section;
+
+    showSection(section);
+
+    if(section==="dashboardSection"){
+      await loadDashboard();
+    }
+
+    if(section==="depositSection"){
+      await loadMpesaHistory();
+    }
+
+    if(section==="ordersSection"){
+      await loadAvailableOrders();
+    }
+
+    if(section==="matchesSection"){
+      await loadMatches();
+    }
+
+    if(section==="transactionsSection"){
+      await loadTransactions();
+    }
+
+    if(section==="profileSection"){
+      await loadProfile();
+    }
+
+    if(section==="adminSection" && isAdmin){
+      await loadAdminData();
+    }
+
+  });
+
+});
+
+$("depositBtn").addEventListener(
+  "click",
+  makeDeposit
+);
+
+$("withdrawBtn").addEventListener(
+  "click",
+  requestWithdrawal
+);
+
+$("saveProfileBtn").addEventListener(
+  "click",
+  saveProfile
+);
+
+$("createOrderBtn").addEventListener(
+  "click",
+  createAdminOrder
+);
+
+$("customerModalClose").addEventListener(
+  "click",
+  ()=>{
+    $("customerModal").classList.add("hidden");
+  }
+);
+
+$("customerModal").addEventListener(
+  "click",
+  event=>{
+    if(event.target === $("customerModal")){
+      $("customerModal").classList.add("hidden");
+    }
+  }
+);
+
+async function initialize(){
+
+  const {data}=await supabaseClient.auth.getSession();
+
+  if(data?.session?.user){
+
+    currentUser=data.session.user;
+
+    await startApp();
+
+  }
+
+}
+
+supabaseClient.auth.onAuthStateChange(
+  async(event,session)=>{
+
+    if(session?.user && !currentUser){
+
+      currentUser=session.user;
+
+      await startApp();
+
+    }
+
+  }
+);
+
+initialize();
+
+</script>
+
+</body>
+</html>
