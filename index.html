@@ -1,1 +1,3713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OrderMatch — Paid Tasks</title>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      color: #172033;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #0f172a;
+      color: white;
+      padding: 18px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .logo span {
+      color: #38bdf8;
+    }
+
+    .user-area {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 25px 16px 60px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .auth-card {
+      max-width: 450px;
+      margin: 50px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.08);
+    }
+
+    h1 {
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      font-size: 21px;
+    }
+
+    h3 {
+      margin-bottom: 8px;
+    }
+
+    .muted {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 9px;
+      font-size: 15px;
+      outline: none;
+      background: white;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #0284c7;
+    }
+
+    button {
+      border: none;
+      border-radius: 9px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #0284c7;
+      color: white;
+    }
+
+    button:hover {
+      opacity: .92;
+    }
+
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
+    }
+
+    .btn-secondary {
+      background: #475569;
+    }
+
+    .btn-success {
+      background: #16a34a;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+    }
+
+    .btn-warning {
+      background: #d97706;
+    }
+
+    .btn-light {
+      background: #e2e8f0;
+      color: #172033;
+    }
+
+    .btn-small {
+      padding: 8px 11px;
+      font-size: 13px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin: 20px 0;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tabs button {
+      white-space: nowrap;
+    }
+
+    .tabs button.active {
+      background: #0f172a;
+    }
+
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.05);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .stat {
+      background: white;
+      padding: 18px;
+      border-radius: 14px;
+      box-shadow: 0 4px 18px rgba(0,0,0,.05);
+    }
+
+    .stat .number {
+      font-size: 25px;
+      font-weight: bold;
+      margin-top: 8px;
+    }
+
+    .task-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .task-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 13px;
+      padding: 17px;
+      background: #fff;
+    }
+
+    .task-card:hover {
+      box-shadow: 0 5px 18px rgba(0,0,0,.07);
+    }
+
+    .reward {
+      font-size: 22px;
+      font-weight: bold;
+      color: #15803d;
+      margin: 10px 0;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 10px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 5px 9px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      background: #e2e8f0;
+    }
+
+    .badge-green {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .badge-yellow {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-red {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .badge-blue {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 700px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 11px;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 13px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      font-weight: bold;
+    }
+
+    .empty {
+      padding: 30px;
+      text-align: center;
+      color: #64748b;
+    }
+
+    .alert {
+      padding: 12px 14px;
+      border-radius: 9px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .alert-error {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .alert-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .profile-box {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .info-box {
+      background: #f8fafc;
+      padding: 14px;
+      border-radius: 10px;
+    }
+
+    .info-label {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .info-value {
+      font-weight: bold;
+      word-break: break-word;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.65);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background: white;
+      width: 100%;
+      max-width: 650px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 16px;
+      padding: 22px;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .close {
+      background: #e2e8f0;
+      color: #172033;
+      width: 38px;
+      height: 38px;
+      padding: 0;
+      font-size: 20px;
+    }
+
+    .admin-title {
+      color: #7c3aed;
+    }
+
+    .admin-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #64748b;
+    }
+
+    @media (max-width: 900px) {
+      .stats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .task-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 650px) {
+      .header-inner {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .user-area {
+        justify-content: flex-start;
+      }
+
+      .stats,
+      .task-grid,
+      .admin-grid,
+      .profile-box {
+        grid-template-columns: 1fr;
+      }
+
+      .container {
+        padding: 18px 12px 50px;
+      }
+
+      .section {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header id="mainHeader" class="hidden">
+  <div class="header-inner">
+    <div class="logo">Order<span>Match</span></div>
+
+    <div class="user-area">
+      <span id="headerUser"></span>
+      <button class="btn-secondary btn-small" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<!-- AUTH -->
+<div id="authView">
+
+  <div class="auth-card">
+
+    <h1>OrderMatch</h1>
+    <p class="muted" style="margin-bottom:22px;">
+      Complete paid tasks and earn money.
+    </p>
+
+    <div id="authMessage"></div>
+
+    <div id="loginForm">
+
+      <div class="form-group">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="Enter your email">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="Enter your password">
+      </div>
+
+      <button style="width:100%;" onclick="login()">Login</button>
+
+      <button
+        class="btn-light"
+        style="width:100%; margin-top:10px;"
+        onclick="showSignup()">
+        Create account
+      </button>
+
+    </div>
+
+    <div id="signupForm" class="hidden">
+
+      <div class="form-group">
+        <label>Full name</label>
+        <input id="signupName" type="text" placeholder="Your full name">
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input id="signupEmail" type="email" placeholder="Your email">
+      </div>
+
+      <div class="form-group">
+        <label>Phone number</label>
+        <input id="signupPhone" type="text" placeholder="07XXXXXXXX">
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input id="signupPassword" type="password" placeholder="Create password">
+      </div>
+
+      <button style="width:100%;" onclick="signup()">Create account</button>
+
+      <button
+        class="btn-light"
+        style="width:100%; margin-top:10px;"
+        onclick="showLogin()">
+        Back to login
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- APP -->
+<div id="appView" class="hidden">
+
+  <main class="container">
+
+    <div id="globalMessage"></div>
+
+    <!-- CUSTOMER -->
+    <div id="customerView">
+
+      <div class="section">
+        <h1>Welcome to OrderMatch</h1>
+        <p class="muted">
+          Find tasks, complete the work, submit proof and earn your reward.
+        </p>
+      </div>
+
+      <div class="stats">
+
+        <div class="stat">
+          <div class="muted">Available Tasks</div>
+          <div class="number" id="availableCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">My Tasks</div>
+          <div class="number" id="myTasksCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Pending Reviews</div>
+          <div class="number" id="pendingReviewsCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Balance</div>
+          <div class="number" id="customerBalance">KES 0.00</div>
+        </div>
+
+      </div>
+
+      <div class="tabs">
+
+        <button
+          id="tabAvailable"
+          class="active"
+          onclick="showCustomerTab('available')">
+          Available Tasks
+        </button>
+
+        <button
+          id="tabMyTasks"
+          onclick="showCustomerTab('mytasks')">
+          My Tasks
+        </button>
+
+        <button
+          id="tabWithdraw"
+          onclick="showCustomerTab('withdraw')">
+          Withdraw
+        </button>
+
+        <button
+          id="tabProfile"
+          onclick="showCustomerTab('profile')">
+          Profile
+        </button>
+
+      </div>
+
+      <!-- AVAILABLE TASKS -->
+      <section id="customerAvailable" class="section">
+
+        <h2>Available Paid Tasks</h2>
+
+        <p class="muted" style="margin-bottom:15px;">
+          Choose a task that you can complete according to its requirements.
+        </p>
+
+        <div id="availableTasks" class="task-grid">
+          <div class="loading">Loading tasks...</div>
+        </div>
+
+      </section>
+
+      <!-- MY TASKS -->
+      <section id="customerMyTasks" class="section hidden">
+
+        <h2>My Tasks</h2>
+
+        <p class="muted" style="margin-bottom:15px;">
+          Tasks you have accepted and their submission status.
+        </p>
+
+        <div id="myTasks">
+          <div class="loading">Loading your tasks...</div>
+        </div>
+
+      </section>
+
+      <!-- WITHDRAW -->
+      <section id="customerWithdraw" class="section hidden">
+
+        <h2>Withdraw Earnings</h2>
+
+        <div class="alert alert-info">
+          Your balance comes from approved task rewards.
+          You do not need to deposit money to work on OrderMatch.
+        </div>
+
+        <div class="info-box" style="margin-bottom:18px;">
+          <div class="info-label">Available balance</div>
+          <div
+            class="info-value"
+            id="withdrawBalance"
+            style="font-size:25px;">
+            KES 0.00
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>M-Pesa phone number</label>
+          <input
+            id="withdrawPhone"
+            type="text"
+            placeholder="07XXXXXXXX or 2547XXXXXXXX">
+        </div>
+
+        <div class="form-group">
+          <label>Amount</label>
+          <input
+            id="withdrawAmount"
+            type="number"
+            min="1"
+            step="0.01"
+            placeholder="Enter amount">
+        </div>
+
+        <button onclick="requestWithdrawal()">
+          Request M-Pesa Payout
+        </button>
+
+        <div style="margin-top:25px;">
+          <h3>Withdrawal History</h3>
+          <div id="withdrawalHistory"></div>
+        </div>
+
+      </section>
+
+      <!-- PROFILE -->
+      <section id="customerProfile" class="section hidden">
+
+        <h2>My Profile</h2>
+
+        <div class="profile-box">
+
+          <div class="info-box">
+            <div class="info-label">Full name</div>
+            <div class="info-value" id="profileName">—</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-label">Email</div>
+            <div class="info-value" id="profileEmail">—</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-label">Phone</div>
+            <div class="info-value" id="profilePhone">—</div>
+          </div>
+
+          <div class="info-box">
+            <div class="info-label">Account ID</div>
+            <div class="info-value" id="profileId">—</div>
+          </div>
+
+        </div>
+
+        <div style="margin-top:20px;">
+          <h3>Update phone number</h3>
+
+          <div class="form-group" style="margin-top:10px;">
+            <input
+              id="updatePhone"
+              type="text"
+              placeholder="07XXXXXXXX">
+          </div>
+
+          <button onclick="updateProfile()">Save Phone</button>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ADMIN -->
+    <div id="adminView" class="hidden">
+
+      <div class="section">
+        <h1 class="admin-title">Admin Dashboard</h1>
+        <p class="muted">
+          Create tasks, manage customers and review completed work.
+        </p>
+      </div>
+
+      <div class="stats">
+
+        <div class="stat">
+          <div class="muted">Total Tasks</div>
+          <div class="number" id="adminTaskCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Available Tasks</div>
+          <div class="number" id="adminAvailableCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Pending Reviews</div>
+          <div class="number" id="adminPendingCount">0</div>
+        </div>
+
+        <div class="stat">
+          <div class="muted">Customers</div>
+          <div class="number" id="adminCustomerCount">0</div>
+        </div>
+
+      </div>
+
+      <div class="tabs">
+
+        <button
+          id="adminTabCreate"
+          class="active"
+          onclick="showAdminTab('create')">
+          Create Task
+        </button>
+
+        <button
+          id="adminTabTasks"
+          onclick="showAdminTab('tasks')">
+          Manage Tasks
+        </button>
+
+        <button
+          id="adminTabSubmissions"
+          onclick="showAdminTab('submissions')">
+          Task Submissions
+        </button>
+
+        <button
+          id="adminTabCustomers"
+          onclick="showAdminTab('customers')">
+          Customers
+        </button>
+
+        <button
+          id="adminTabTransactions"
+          onclick="showAdminTab('transactions')">
+          Transactions
+        </button>
+
+      </div>
+
+      <!-- CREATE TASK -->
+      <section id="adminCreate" class="section">
+
+        <h2>Create New Paid Task</h2>
+
+        <div class="admin-grid">
+
+          <div>
+
+            <div class="form-group">
+              <label>Task title</label>
+              <input
+                id="taskTitle"
+                type="text"
+                placeholder="Example: Collect 20 local business contacts">
+            </div>
+
+            <div class="form-group">
+              <label>Reward (KES)</label>
+              <input
+                id="taskReward"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Example: 100">
+            </div>
+
+            <div class="form-group">
+              <label>Estimated time (minutes)</label>
+              <input
+                id="taskMinutes"
+                type="number"
+                min="1"
+                placeholder="Example: 30">
+            </div>
+
+            <div class="form-group">
+              <label>Submission type</label>
+              <select id="taskSubmissionType">
+                <option value="text">Text / Written answer</option>
+                <option value="url">URL / Link</option>
+                <option value="text_and_url">Text + URL</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea
+                id="taskDescription"
+                placeholder="Explain exactly what the customer needs to do."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Requirements</label>
+              <textarea
+                id="taskRequirements"
+                placeholder="Explain the requirements and what counts as acceptable work."></textarea>
+            </div>
+
+          </div>
+
+        </div>
+
+        <button onclick="createTask()">Publish Task</button>
+
+      </section>
+
+      <!-- MANAGE TASKS -->
+      <section id="adminTasks" class="section hidden">
+
+        <h2>Manage Tasks</h2>
+
+        <div id="adminTaskTable">
+          <div class="loading">Loading tasks...</div>
+        </div>
+
+      </section>
+
+      <!-- SUBMISSIONS -->
+      <section id="adminSubmissions" class="section hidden">
+
+        <h2>Task Submissions</h2>
+
+        <p class="muted" style="margin-bottom:15px;">
+          Review customer work before approving the reward.
+        </p>
+
+        <div id="adminSubmissionsTable">
+          <div class="loading">Loading submissions...</div>
+        </div>
+
+      </section>
+
+      <!-- CUSTOMERS -->
+      <section id="adminCustomers" class="section hidden">
+
+        <h2>Customers</h2>
+
+        <div id="adminCustomersTable">
+          <div class="loading">Loading customers...</div>
+        </div>
+
+      </section>
+
+      <!-- TRANSACTIONS -->
+      <section id="adminTransactions" class="section hidden">
+
+        <h2>Transactions</h2>
+
+        <div id="adminTransactionsTable">
+          <div class="loading">Loading transactions...</div>
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+</div>
+
+<!-- TASK DETAILS MODAL -->
+<div id="taskModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2 id="modalTaskTitle">Task Details</h2>
+      <button class="close" onclick="closeTaskModal()">×</button>
+    </div>
+
+    <div id="modalTaskContent"></div>
+
+  </div>
+
+</div>
+
+<!-- SUBMISSION MODAL -->
+<div id="submissionModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>Submit Task Work</h2>
+      <button class="close" onclick="closeSubmissionModal()">×</button>
+    </div>
+
+    <div id="submissionTaskInfo"></div>
+
+    <div class="form-group">
+      <label>Your work / answer</label>
+      <textarea
+        id="submissionText"
+        placeholder="Enter your completed work or answer here."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Proof / URL (optional where applicable)</label>
+      <input
+        id="submissionUrl"
+        type="url"
+        placeholder="https://...">
+    </div>
+
+    <button onclick="submitTaskWork()">Submit Work</button>
+
+  </div>
+
+</div>
+
+<!-- REVIEW MODAL -->
+<div id="reviewModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>Review Submission</h2>
+      <button class="close" onclick="closeReviewModal()">×</button>
+    </div>
+
+    <div id="reviewSubmissionInfo"></div>
+
+    <div class="form-group">
+      <label>Review note</label>
+      <textarea
+        id="reviewNote"
+        placeholder="Explain why the work is approved or rejected."></textarea>
+    </div>
+
+    <div class="action-row">
+      <button
+        class="btn-success"
+        onclick="reviewSubmission('approved')">
+        Approve & Credit Reward
+      </button>
+
+      <button
+        class="btn-danger"
+        onclick="reviewSubmission('rejected')">
+        Reject
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- CUSTOMER DETAILS MODAL -->
+<div id="customerModal" class="modal hidden">
+
+  <div class="modal-content">
+
+    <div class="modal-header">
+      <h2>Customer Details</h2>
+      <button class="close" onclick="closeCustomerModal()">×</button>
+    </div>
+
+    <div id="customerDetails"></div>
+
+  </div>
+
+</div>
+
+<script>
+  /*
+   ============================================================
+   ORDERMATCH SUPABASE CONFIGURATION
+   ============================================================
+  */
+
+  const SUPABASE_URL =
+    "https://bdflurarenkcvcnttrya.supabase.co";
+
+  /*
+   IMPORTANT:
+   Replace the value below with the SAME Supabase publishable/
+   anon key from your previous working index.html.
+  */
+
+  const SUPABASE_ANON_KEY =
+    "PASTE_YOUR_EXISTING_SUPABASE_PUBLISHABLE_KEY_HERE";
+
+  const { createClient } = supabase;
+
+  const db = createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  let currentUser = null;
+  let currentProfile = null;
+  let isAdmin = false;
+
+  let availableTasksData = [];
+  let myTasksData = [];
+  let selectedTask = null;
+  let selectedSubmission = null;
+
+  /*
+   ============================================================
+   GENERAL HELPERS
+   ============================================================
+  */
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return "";
+
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function formatMoney(value) {
+    return "KES " + Number(value || 0).toFixed(2);
+  }
+
+  function formatDate(value) {
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleString();
+  }
+
+  function showMessage(message, type = "info", target = "globalMessage") {
+    const element = document.getElementById(target);
+
+    if (!element) return;
+
+    element.innerHTML =
+      `<div class="alert alert-${type}">
+        ${escapeHtml(message)}
+      </div>`;
+
+    setTimeout(() => {
+      element.innerHTML = "";
+    }, 6000);
+  }
+
+  function showLoading(elementId, text = "Loading...") {
+    const element = document.getElementById(elementId);
+
+    if (element) {
+      element.innerHTML =
+        `<div class="loading">${escapeHtml(text)}</div>`;
+    }
+  }
+
+  /*
+   ============================================================
+   AUTH
+   ============================================================
+  */
+
+  function showSignup() {
+    document.getElementById("loginForm").classList.add("hidden");
+    document.getElementById("signupForm").classList.remove("hidden");
+    document.getElementById("authMessage").innerHTML = "";
+  }
+
+  function showLogin() {
+    document.getElementById("signupForm").classList.add("hidden");
+    document.getElementById("loginForm").classList.remove("hidden");
+    document.getElementById("authMessage").innerHTML = "";
+  }
+
+  async function signup() {
+
+    const name =
+      document.getElementById("signupName").value.trim();
+
+    const email =
+      document.getElementById("signupEmail").value.trim();
+
+    const phone =
+      document.getElementById("signupPhone").value.trim();
+
+    const password =
+      document.getElementById("signupPassword").value;
+
+    if (!name || !email || !phone || !password) {
+      showMessage(
+        "Please complete all registration fields.",
+        "error",
+        "authMessage"
+      );
+      return;
+    }
+
+    try {
+
+      const { data, error } =
+        await db.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name,
+              phone: phone
+            }
+          }
+        });
+
+      if (error) throw error;
+
+      if (data.user) {
+
+        await db
+          .from("profiles")
+          .upsert({
+            id: data.user.id,
+            full_name: name,
+            phone: phone,
+            email: email
+          });
+
+      }
+
+      showMessage(
+        "Account created. Check your email if email confirmation is required.",
+        "success",
+        "authMessage"
+      );
+
+      showLogin();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message || "Unable to create account.",
+        "error",
+        "authMessage"
+      );
+    }
+  }
+
+  async function login() {
+
+    const email =
+      document.getElementById("loginEmail").value.trim();
+
+    const password =
+      document.getElementById("loginPassword").value;
+
+    if (!email || !password) {
+
+      showMessage(
+        "Enter your email and password.",
+        "error",
+        "authMessage"
+      );
+
+      return;
+    }
+
+    try {
+
+      const { error } =
+        await db.auth.signInWithPassword({
+          email,
+          password
+        });
+
+      if (error) throw error;
+
+      await initializeApp();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message || "Login failed.",
+        "error",
+        "authMessage"
+      );
+    }
+  }
+
+  async function logout() {
+
+    await db.auth.signOut();
+
+    currentUser = null;
+    currentProfile = null;
+    isAdmin = false;
+
+    document.getElementById("mainHeader")
+      .classList.add("hidden");
+
+    document.getElementById("appView")
+      .classList.add("hidden");
+
+    document.getElementById("authView")
+      .classList.remove("hidden");
+
+    showLogin();
+  }
+
+  /*
+   ============================================================
+   INITIALIZATION
+   ============================================================
+  */
+
+  async function initializeApp() {
+
+    try {
+
+      const {
+        data: {
+          user
+        }
+      } = await db.auth.getUser();
+
+      if (!user) {
+        return;
+      }
+
+      currentUser = user;
+
+      await loadProfile();
+
+      const {
+        data: adminResult,
+        error: adminError
+      } = await db.rpc("is_admin");
+
+      if (adminError) {
+        console.warn("Admin check:", adminError);
+        isAdmin = false;
+      } else {
+        isAdmin = !!adminResult;
+      }
+
+      document.getElementById("authView")
+        .classList.add("hidden");
+
+      document.getElementById("appView")
+        .classList.remove("hidden");
+
+      document.getElementById("mainHeader")
+        .classList.remove("hidden");
+
+      document.getElementById("headerUser").textContent =
+        currentProfile?.full_name ||
+        currentUser.email ||
+        "User";
+
+      if (isAdmin) {
+
+        document.getElementById("customerView")
+          .classList.add("hidden");
+
+        document.getElementById("adminView")
+          .classList.remove("hidden");
+
+        await loadAdminDashboard();
+
+      } else {
+
+        document.getElementById("adminView")
+          .classList.add("hidden");
+
+        document.getElementById("customerView")
+          .classList.remove("hidden");
+
+        await loadCustomerDashboard();
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        "Unable to load your account.",
+        "error"
+      );
+    }
+  }
+
+  async function loadProfile() {
+
+    const {
+      data,
+      error
+    } = await db
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+    }
+
+    currentProfile = data || {
+      id: currentUser.id,
+      email: currentUser.email
+    };
+
+    document.getElementById("profileName").textContent =
+      currentProfile.full_name || "—";
+
+    document.getElementById("profileEmail").textContent =
+      currentProfile.email ||
+      currentUser.email ||
+      "—";
+
+    document.getElementById("profilePhone").textContent =
+      currentProfile.phone || "—";
+
+    document.getElementById("profileId").textContent =
+      currentUser.id;
+
+    document.getElementById("updatePhone").value =
+      currentProfile.phone || "";
+
+    document.getElementById("withdrawPhone").value =
+      currentProfile.phone || "";
+  }
+
+  /*
+   ============================================================
+   CUSTOMER TABS
+   ============================================================
+  */
+
+  function showCustomerTab(tab) {
+
+    const sections = [
+      "customerAvailable",
+      "customerMyTasks",
+      "customerWithdraw",
+      "customerProfile"
+    ];
+
+    sections.forEach(id => {
+      document.getElementById(id)
+        .classList.add("hidden");
+    });
+
+    [
+      "tabAvailable",
+      "tabMyTasks",
+      "tabWithdraw",
+      "tabProfile"
+    ].forEach(id => {
+      document.getElementById(id)
+        .classList.remove("active");
+    });
+
+    if (tab === "available") {
+
+      document.getElementById("customerAvailable")
+        .classList.remove("hidden");
+
+      document.getElementById("tabAvailable")
+        .classList.add("active");
+
+    } else if (tab === "mytasks") {
+
+      document.getElementById("customerMyTasks")
+        .classList.remove("hidden");
+
+      document.getElementById("tabMyTasks")
+        .classList.add("active");
+
+      loadMyTasks();
+
+    } else if (tab === "withdraw") {
+
+      document.getElementById("customerWithdraw")
+        .classList.remove("hidden");
+
+      document.getElementById("tabWithdraw")
+        .classList.add("active");
+
+      loadBalance();
+      loadWithdrawalHistory();
+
+    } else if (tab === "profile") {
+
+      document.getElementById("customerProfile")
+        .classList.remove("hidden");
+
+      document.getElementById("tabProfile")
+        .classList.add("active");
+
+    }
+  }
+
+  /*
+   ============================================================
+   CUSTOMER DASHBOARD
+   ============================================================
+  */
+
+  async function loadCustomerDashboard() {
+
+    await Promise.all([
+      loadAvailableTasks(),
+      loadMyTasks(),
+      loadBalance(),
+      loadWithdrawalHistory(),
+      loadProfile()
+    ]);
+  }
+
+  async function loadAvailableTasks() {
+
+    const container =
+      document.getElementById("availableTasks");
+
+    showLoading(
+      "availableTasks",
+      "Loading available tasks..."
+    );
+
+    const {
+      data,
+      error
+    } = await db
+      .from("orders")
+      .select("*")
+      .eq("status", "available")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          Unable to load tasks.
+        </div>`;
+
+      return;
+    }
+
+    availableTasksData = data || [];
+
+    document.getElementById("availableCount").textContent =
+      availableTasksData.length;
+
+    if (!availableTasksData.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No paid tasks are currently available.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML =
+      availableTasksData.map(task => {
+
+        const reward =
+          task.reward ?? task.amount ?? 0;
+
+        return `
+          <div class="task-card">
+
+            <h3>
+              ${escapeHtml(task.product_name)}
+            </h3>
+
+            <div class="reward">
+              ${formatMoney(reward)}
+            </div>
+
+            <div class="task-meta">
+
+              <span class="badge badge-green">
+                Available
+              </span>
+
+              ${
+                task.estimated_minutes
+                ? `<span class="badge">
+                    ${escapeHtml(task.estimated_minutes)} min
+                   </span>`
+                : ""
+              }
+
+            </div>
+
+            <p class="muted">
+              ${escapeHtml(
+                (task.description || "")
+                  .substring(0, 130)
+              )}
+              ${
+                (task.description || "").length > 130
+                ? "..."
+                : ""
+              }
+            </p>
+
+            <div class="task-actions">
+
+              <button
+                class="btn-small"
+                onclick="openTaskDetails(${task.id})">
+                View Details
+              </button>
+
+            </div>
+
+          </div>
+        `;
+      }).join("");
+  }
+
+  function openTaskDetails(taskId) {
+
+    const task =
+      availableTasksData.find(
+        item => Number(item.id) === Number(taskId)
+      );
+
+    if (!task) return;
+
+    selectedTask = task;
+
+    const reward =
+      task.reward ?? task.amount ?? 0;
+
+    document.getElementById("modalTaskTitle").textContent =
+      task.product_name;
+
+    document.getElementById("modalTaskContent").innerHTML = `
+
+      <div class="reward">
+        ${formatMoney(reward)}
+      </div>
+
+      <div class="task-meta">
+
+        <span class="badge badge-green">
+          Available
+        </span>
+
+        ${
+          task.estimated_minutes
+          ? `<span class="badge">
+              Estimated ${escapeHtml(task.estimated_minutes)} minutes
+             </span>`
+          : ""
+        }
+
+        <span class="badge">
+          ${escapeHtml(task.submission_type || "text")}
+        </span>
+
+      </div>
+
+      <h3 style="margin-top:20px;">
+        Description
+      </h3>
+
+      <p style="white-space:pre-wrap; margin-bottom:18px;">
+        ${escapeHtml(
+          task.description ||
+          "No additional description provided."
+        )}
+      </p>
+
+      <h3>
+        Requirements
+      </h3>
+
+      <p style="white-space:pre-wrap; margin-bottom:20px;">
+        ${escapeHtml(
+          task.requirements ||
+          "Complete the task accurately and submit the requested proof."
+        )}
+      </p>
+
+      <div class="action-row">
+
+        <button
+          class="btn-success"
+          onclick="acceptTask(${task.id})">
+          Accept Task
+        </button>
+
+        <button
+          class="btn-light"
+          onclick="closeTaskModal()">
+          Cancel
+        </button>
+
+      </div>
+    `;
+
+    document.getElementById("taskModal")
+      .classList.remove("hidden");
+  }
+
+  function closeTaskModal() {
+
+    document.getElementById("taskModal")
+      .classList.add("hidden");
+
+    selectedTask = null;
+  }
+
+  async function acceptTask(orderId) {
+
+    if (!currentUser) return;
+
+    if (!confirm(
+      "Accept this task? You will be responsible for completing the requirements."
+    )) {
+      return;
+    }
+
+    try {
+
+      const {
+        data,
+        error
+      } = await db.rpc(
+        "accept_task",
+        {
+          p_order_id: orderId
+        }
+      );
+
+      if (error) throw error;
+
+      closeTaskModal();
+
+      showMessage(
+        "Task accepted successfully.",
+        "success"
+      );
+
+      await loadCustomerDashboard();
+
+      showCustomerTab("mytasks");
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message || "Unable to accept this task.",
+        "error"
+      );
+    }
+  }
+
+  /*
+   ============================================================
+   MY TASKS
+   ============================================================
+  */
+
+  async function loadMyTasks() {
+
+    const container =
+      document.getElementById("myTasks");
+
+    showLoading(
+      "myTasks",
+      "Loading your tasks..."
+    );
+
+    const {
+      data: matches,
+      error: matchError
+    } = await db
+      .from("order_matches")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order("matched_at", {
+        ascending: false
+      });
+
+    if (matchError) {
+
+      console.error(matchError);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          Unable to load your tasks.
+        </div>`;
+
+      return;
+    }
+
+    if (!matches || !matches.length) {
+
+      myTasksData = [];
+
+      document.getElementById("myTasksCount").textContent =
+        "0";
+
+      document.getElementById("pendingReviewsCount").textContent =
+        "0";
+
+      container.innerHTML =
+        `<div class="empty">
+          You have not accepted any tasks yet.
+        </div>`;
+
+      return;
+    }
+
+    const orderIds =
+      matches.map(item => item.order_id);
+
+    const {
+      data: orders,
+      error: orderError
+    } = await db
+      .from("orders")
+      .select("*")
+      .in("id", orderIds);
+
+    if (orderError) {
+      console.error(orderError);
+    }
+
+    const {
+      data: submissions,
+      error: submissionError
+    } = await db
+      .from("task_submissions")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .in("order_id", orderIds)
+      .order("submitted_at", {
+        ascending: false
+      });
+
+    if (submissionError) {
+      console.error(submissionError);
+    }
+
+    myTasksData =
+      matches.map(match => {
+
+        const order =
+          (orders || []).find(
+            item => Number(item.id) === Number(match.order_id)
+          );
+
+        const taskSubmissions =
+          (submissions || []).filter(
+            item => Number(item.order_id) === Number(match.order_id)
+          );
+
+        const latestSubmission =
+          taskSubmissions[0] || null;
+
+        return {
+          ...match,
+          order,
+          submission: latestSubmission
+        };
+      });
+
+    document.getElementById("myTasksCount").textContent =
+      myTasksData.length;
+
+    const pendingCount =
+      myTasksData.filter(
+        item =>
+          item.submission &&
+          item.submission.status === "pending"
+      ).length;
+
+    document.getElementById("pendingReviewsCount").textContent =
+      pendingCount;
+
+    if (!myTasksData.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          You have no tasks yet.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML =
+      myTasksData.map(item => {
+
+        const task = item.order;
+
+        if (!task) {
+          return "";
+        }
+
+        const reward =
+          task.reward ?? task.amount ?? 0;
+
+        const submission =
+          item.submission;
+
+        let statusHtml =
+          `<span class="badge badge-yellow">
+            Work not submitted
+           </span>`;
+
+        if (task.status === "completed") {
+
+          statusHtml =
+            `<span class="badge badge-green">
+              Completed
+             </span>`;
+
+        } else if (submission?.status === "pending") {
+
+          statusHtml =
+            `<span class="badge badge-yellow">
+              Under review
+             </span>`;
+
+        } else if (submission?.status === "approved") {
+
+          statusHtml =
+            `<span class="badge badge-green">
+              Reward approved
+             </span>`;
+
+        } else if (submission?.status === "rejected") {
+
+          statusHtml =
+            `<span class="badge badge-red">
+              Submission rejected
+             </span>`;
+        }
+
+        return `
+          <div class="task-card" style="margin-bottom:15px;">
+
+            <h3>
+              ${escapeHtml(task.product_name)}
+            </h3>
+
+            <div class="reward">
+              ${formatMoney(reward)}
+            </div>
+
+            <div class="task-meta">
+              ${statusHtml}
+            </div>
+
+            <p class="muted">
+              Accepted:
+              ${formatDate(item.matched_at)}
+            </p>
+
+            ${
+              submission?.review_note
+              ? `
+                <div class="info-box" style="margin-top:12px;">
+                  <div class="info-label">
+                    Review note
+                  </div>
+                  <div>
+                    ${escapeHtml(submission.review_note)}
+                  </div>
+                </div>
+              `
+              : ""
+            }
+
+            <div class="task-actions">
+
+              <button
+                class="btn-small"
+                onclick="openMyTaskDetails(${task.id})">
+                View Task
+              </button>
+
+              ${
+                !submission ||
+                submission.status === "rejected"
+                ? `
+                  <button
+                    class="btn-success btn-small"
+                    onclick="openSubmissionModal(${task.id})">
+                    ${
+                      submission?.status === "rejected"
+                      ? "Resubmit Work"
+                      : "Submit Work"
+                    }
+                  </button>
+                `
+                : ""
+              }
+
+            </div>
+
+          </div>
+        `;
+      }).join("");
+  }
+
+  function openMyTaskDetails(taskId) {
+
+    const item =
+      myTasksData.find(
+        row => Number(row.order?.id) === Number(taskId)
+      );
+
+    if (!item || !item.order) return;
+
+    const task = item.order;
+
+    const reward =
+      task.reward ?? task.amount ?? 0;
+
+    selectedTask = task;
+
+    document.getElementById("modalTaskTitle").textContent =
+      task.product_name;
+
+    document.getElementById("modalTaskContent").innerHTML = `
+
+      <div class="reward">
+        ${formatMoney(reward)}
+      </div>
+
+      <div class="task-meta">
+        <span class="badge badge-blue">
+          Accepted
+        </span>
+      </div>
+
+      <h3 style="margin-top:20px;">
+        Description
+      </h3>
+
+      <p style="white-space:pre-wrap; margin-bottom:18px;">
+        ${escapeHtml(task.description || "—")}
+      </p>
+
+      <h3>
+        Requirements
+      </h3>
+
+      <p style="white-space:pre-wrap;">
+        ${escapeHtml(task.requirements || "—")}
+      </p>
+
+    `;
+
+    document.getElementById("taskModal")
+      .classList.remove("hidden");
+  }
+
+  function openSubmissionModal(taskId) {
+
+    const item =
+      myTasksData.find(
+        row => Number(row.order?.id) === Number(taskId)
+      );
+
+    if (!item || !item.order) return;
+
+    selectedTask = item.order;
+
+    document.getElementById("submissionText").value = "";
+    document.getElementById("submissionUrl").value = "";
+
+    document.getElementById("submissionTaskInfo").innerHTML = `
+
+      <div class="info-box" style="margin-bottom:18px;">
+
+        <div class="info-label">
+          Task
+        </div>
+
+        <div class="info-value">
+          ${escapeHtml(selectedTask.product_name)}
+        </div>
+
+        <div
+          style="margin-top:8px;"
+          class="reward">
+          ${formatMoney(
+            selectedTask.reward ??
+            selectedTask.amount ??
+            0
+          )}
+        </div>
+
+      </div>
+
+      <div class="alert alert-info">
+        Submit work that directly satisfies the task requirements.
+        Your submission will be reviewed by the administrator.
+      </div>
+
+    `;
+
+    document.getElementById("submissionModal")
+      .classList.remove("hidden");
+  }
+
+  function closeSubmissionModal() {
+
+    document.getElementById("submissionModal")
+      .classList.add("hidden");
+
+    selectedTask = null;
+  }
+
+  async function submitTaskWork() {
+
+    if (!selectedTask || !currentUser) return;
+
+    const submissionText =
+      document.getElementById("submissionText")
+        .value.trim();
+
+    const submissionUrl =
+      document.getElementById("submissionUrl")
+        .value.trim();
+
+    const type =
+      selectedTask.submission_type || "text";
+
+    if (type === "text" && !submissionText) {
+
+      showMessage(
+        "Please enter your completed work.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (type === "url" && !submissionUrl) {
+
+      showMessage(
+        "Please provide the required URL.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (
+      type === "text_and_url" &&
+      (!submissionText || !submissionUrl)
+    ) {
+
+      showMessage(
+        "Please provide both the work and URL.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      const {
+        error
+      } = await db
+        .from("task_submissions")
+        .insert({
+          order_id: selectedTask.id,
+          user_id: currentUser.id,
+          submission_text:
+            submissionText || null,
+          submission_url:
+            submissionUrl || null,
+          status: "pending",
+          reward_amount:
+            selectedTask.reward ??
+            selectedTask.amount ??
+            0
+        });
+
+      if (error) throw error;
+
+      closeSubmissionModal();
+
+      showMessage(
+        "Your work has been submitted for review.",
+        "success"
+      );
+
+      await loadCustomerDashboard();
+
+      showCustomerTab("mytasks");
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Unable to submit your work.",
+        "error"
+      );
+    }
+  }
+
+  /*
+   ============================================================
+   BALANCE
+   ============================================================
+  */
+
+  async function loadBalance() {
+
+    const {
+      data,
+      error
+    } = await db
+      .from("account_balances")
+      .select("balance")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+    }
+
+    const balance =
+      Number(data?.balance || 0);
+
+    document.getElementById("customerBalance").textContent =
+      formatMoney(balance);
+
+    document.getElementById("withdrawBalance").textContent =
+      formatMoney(balance);
+  }
+
+  /*
+   ============================================================
+   WITHDRAWAL
+   ============================================================
+  */
+
+  async function requestWithdrawal() {
+
+    const amount =
+      Number(
+        document.getElementById("withdrawAmount")
+          .value
+      );
+
+    const phone =
+      document.getElementById("withdrawPhone")
+        .value.trim();
+
+    if (!amount || amount <= 0) {
+
+      showMessage(
+        "Enter a valid withdrawal amount.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (!phone) {
+
+      showMessage(
+        "Enter your M-Pesa phone number.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      const {
+        data,
+        error
+      } = await db.rpc(
+        "request_withdrawal",
+        {
+          p_amount: amount,
+          p_phone: phone
+        }
+      );
+
+      if (error) throw error;
+
+      showMessage(
+        "Your M-Pesa payout request has been submitted.",
+        "success"
+      );
+
+      document.getElementById("withdrawAmount").value = "";
+
+      await loadBalance();
+      await loadWithdrawalHistory();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Unable to request withdrawal.",
+        "error"
+      );
+    }
+  }
+
+  async function loadWithdrawalHistory() {
+
+    const container =
+      document.getElementById("withdrawalHistory");
+
+    const {
+      data,
+      error
+    } = await db
+      .from("transactions")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .eq("type", "withdrawal")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="empty">
+          Unable to load withdrawal history.
+        </div>`;
+
+      return;
+    }
+
+    if (!data || !data.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No withdrawals yet.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Phone</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+
+          <tbody>
+
+            ${
+              data.map(transaction => `
+
+                <tr>
+
+                  <td>
+                    ${formatMoney(transaction.amount)}
+                  </td>
+
+                  <td>
+                    <span class="badge ${
+                      transaction.status === "approved"
+                      ? "badge-green"
+                      : transaction.status === "rejected"
+                      ? "badge-red"
+                      : "badge-yellow"
+                    }">
+                      ${escapeHtml(transaction.status)}
+                    </span>
+                  </td>
+
+                  <td>
+                    ${escapeHtml(transaction.reference || "—")}
+                  </td>
+
+                  <td>
+                    ${formatDate(transaction.created_at)}
+                  </td>
+
+                </tr>
+
+              `).join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+  /*
+   ============================================================
+   PROFILE
+   ============================================================
+  */
+
+  async function updateProfile() {
+
+    const phone =
+      document.getElementById("updatePhone")
+        .value.trim();
+
+    if (!phone) {
+
+      showMessage(
+        "Enter a phone number.",
+        "error"
+      );
+
+      return;
+    }
+
+    const {
+      error
+    } = await db
+      .from("profiles")
+      .update({
+        phone: phone
+      })
+      .eq("id", currentUser.id);
+
+    if (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Unable to update profile.",
+        "error"
+      );
+
+      return;
+    }
+
+    showMessage(
+      "Profile updated successfully.",
+      "success"
+    );
+
+    await loadProfile();
+  }
+
+  /*
+   ============================================================
+   ADMIN TABS
+   ============================================================
+  */
+
+  function showAdminTab(tab) {
+
+    const sections = [
+      "adminCreate",
+      "adminTasks",
+      "adminSubmissions",
+      "adminCustomers",
+      "adminTransactions"
+    ];
+
+    sections.forEach(id => {
+      document.getElementById(id)
+        .classList.add("hidden");
+    });
+
+    [
+      "adminTabCreate",
+      "adminTabTasks",
+      "adminTabSubmissions",
+      "adminTabCustomers",
+      "adminTabTransactions"
+    ].forEach(id => {
+      document.getElementById(id)
+        .classList.remove("active");
+    });
+
+    if (tab === "create") {
+
+      document.getElementById("adminCreate")
+        .classList.remove("hidden");
+
+      document.getElementById("adminTabCreate")
+        .classList.add("active");
+
+    } else if (tab === "tasks") {
+
+      document.getElementById("adminTasks")
+        .classList.remove("hidden");
+
+      document.getElementById("adminTabTasks")
+        .classList.add("active");
+
+      loadAdminTasks();
+
+    } else if (tab === "submissions") {
+
+      document.getElementById("adminSubmissions")
+        .classList.remove("hidden");
+
+      document.getElementById("adminTabSubmissions")
+        .classList.add("active");
+
+      loadAdminSubmissions();
+
+    } else if (tab === "customers") {
+
+      document.getElementById("adminCustomers")
+        .classList.remove("hidden");
+
+      document.getElementById("adminTabCustomers")
+        .classList.add("active");
+
+      loadAdminCustomers();
+
+    } else if (tab === "transactions") {
+
+      document.getElementById("adminTransactions")
+        .classList.remove("hidden");
+
+      document.getElementById("adminTabTransactions")
+        .classList.add("active");
+
+      loadAdminTransactions();
+    }
+  }
+
+  /*
+   ============================================================
+   ADMIN DASHBOARD
+   ============================================================
+  */
+
+  async function loadAdminDashboard() {
+
+    await Promise.all([
+      loadAdminTasks(),
+      loadAdminSubmissions(),
+      loadAdminCustomers(),
+      loadAdminTransactions()
+    ]);
+  }
+
+  /*
+   ============================================================
+   CREATE TASK
+   ============================================================
+  */
+
+  async function createTask() {
+
+    const title =
+      document.getElementById("taskTitle")
+        .value.trim();
+
+    const reward =
+      Number(
+        document.getElementById("taskReward")
+          .value
+      );
+
+    const minutes =
+      Number(
+        document.getElementById("taskMinutes")
+          .value
+      );
+
+    const submissionType =
+      document.getElementById("taskSubmissionType")
+        .value;
+
+    const description =
+      document.getElementById("taskDescription")
+        .value.trim();
+
+    const requirements =
+      document.getElementById("taskRequirements")
+        .value.trim();
+
+    if (!title || !reward || reward <= 0) {
+
+      showMessage(
+        "Enter a task title and valid reward.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (!description) {
+
+      showMessage(
+        "Add a task description.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (!requirements) {
+
+      showMessage(
+        "Add the task requirements.",
+        "error"
+      );
+
+      return;
+    }
+
+    try {
+
+      const {
+        data,
+        error
+      } = await db
+        .from("orders")
+        .insert({
+          product_name: title,
+          amount: reward,
+          reward: reward,
+          description: description,
+          requirements: requirements,
+          estimated_minutes:
+            minutes || null,
+          submission_type:
+            submissionType,
+          status: "available"
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      showMessage(
+        "Task published successfully.",
+        "success"
+      );
+
+      document.getElementById("taskTitle").value = "";
+      document.getElementById("taskReward").value = "";
+      document.getElementById("taskMinutes").value = "";
+      document.getElementById("taskDescription").value = "";
+      document.getElementById("taskRequirements").value = "";
+
+      await loadAdminTasks();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Unable to create task.",
+        "error"
+      );
+    }
+  }
+
+  /*
+   ============================================================
+   ADMIN TASKS
+   ============================================================
+  */
+
+  async function loadAdminTasks() {
+
+    const container =
+      document.getElementById("adminTaskTable");
+
+    showLoading(
+      "adminTaskTable",
+      "Loading tasks..."
+    );
+
+    const {
+      data,
+      error
+    } = await db
+      .from("orders")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+      return;
+    }
+
+    const tasks = data || [];
+
+    document.getElementById("adminTaskCount").textContent =
+      tasks.length;
+
+    document.getElementById("adminAvailableCount").textContent =
+      tasks.filter(
+        task => task.status === "available"
+      ).length;
+
+    if (!tasks.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No tasks have been created.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML = `
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Task</th>
+              <th>Reward</th>
+              <th>Time</th>
+              <th>Status</th>
+              <th>Created</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            ${
+              tasks.map(task => `
+
+                <tr>
+
+                  <td>
+                    <strong>
+                      ${escapeHtml(task.product_name)}
+                    </strong>
+
+                    <div class="muted" style="margin-top:5px;">
+                      ${escapeHtml(
+                        (task.description || "")
+                          .substring(0, 100)
+                      )}
+                    </div>
+                  </td>
+
+                  <td>
+                    ${formatMoney(
+                      task.reward ??
+                      task.amount ??
+                      0
+                    )}
+                  </td>
+
+                  <td>
+                    ${
+                      task.estimated_minutes
+                      ? task.estimated_minutes + " min"
+                      : "—"
+                    }
+                  </td>
+
+                  <td>
+                    <span class="badge ${
+                      task.status === "available"
+                      ? "badge-green"
+                      : task.status === "completed"
+                      ? "badge-blue"
+                      : "badge-yellow"
+                    }">
+                      ${escapeHtml(task.status)}
+                    </span>
+                  </td>
+
+                  <td>
+                    ${formatDate(task.created_at)}
+                  </td>
+
+                </tr>
+
+              `).join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+  /*
+   ============================================================
+   ADMIN SUBMISSIONS
+   ============================================================
+  */
+
+  async function loadAdminSubmissions() {
+
+    const container =
+      document.getElementById("adminSubmissionsTable");
+
+    showLoading(
+      "adminSubmissionsTable",
+      "Loading submissions..."
+    );
+
+    const {
+      data,
+      error
+    } = await db
+      .from("task_submissions")
+      .select("*")
+      .order("submitted_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+      return;
+    }
+
+    const submissions = data || [];
+
+    const pending =
+      submissions.filter(
+        item => item.status === "pending"
+      ).length;
+
+    document.getElementById("adminPendingCount").textContent =
+      pending;
+
+    if (!submissions.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No task submissions yet.
+        </div>`;
+
+      return;
+    }
+
+    const orderIds =
+      [...new Set(
+        submissions.map(item => item.order_id)
+      )];
+
+    let orders = [];
+
+    if (orderIds.length) {
+
+      const result =
+        await db
+          .from("orders")
+          .select("*")
+          .in("id", orderIds);
+
+      if (!result.error) {
+        orders = result.data || [];
+      }
+    }
+
+    container.innerHTML = `
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Task</th>
+              <th>Customer</th>
+              <th>Reward</th>
+              <th>Submission</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            ${
+              submissions.map(submission => {
+
+                const task =
+                  orders.find(
+                    order =>
+                      Number(order.id) ===
+                      Number(submission.order_id)
+                  );
+
+                return `
+
+                  <tr>
+
+                    <td>
+                      <strong>
+                        ${escapeHtml(
+                          task?.product_name ||
+                          "Task #" +
+                          submission.order_id
+                        )}
+                      </strong>
+                    </td>
+
+                    <td>
+                      <small>
+                        ${escapeHtml(
+                          submission.user_id
+                        )}
+                      </small>
+                    </td>
+
+                    <td>
+                      ${formatMoney(
+                        submission.reward_amount ??
+                        task?.reward ??
+                        task?.amount ??
+                        0
+                      )}
+                    </td>
+
+                    <td>
+
+                      ${
+                        submission.submission_text
+                        ? `
+                          <div style="
+                            white-space:pre-wrap;
+                            max-width:300px;
+                          ">
+                            ${escapeHtml(
+                              submission.submission_text
+                            )}
+                          </div>
+                        `
+                        : ""
+                      }
+
+                      ${
+                        submission.submission_url
+                        ? `
+                          <div style="margin-top:6px;">
+                            <a
+                              href="${escapeHtml(
+                                submission.submission_url
+                              )}"
+                              target="_blank"
+                              rel="noopener noreferrer">
+                              Open submitted link
+                            </a>
+                          </div>
+                        `
+                        : ""
+                      }
+
+                    </td>
+
+                    <td>
+                      <span class="badge ${
+                        submission.status === "approved"
+                        ? "badge-green"
+                        : submission.status === "rejected"
+                        ? "badge-red"
+                        : "badge-yellow"
+                      }">
+                        ${escapeHtml(
+                          submission.status
+                        )}
+                      </span>
+                    </td>
+
+                    <td>
+
+                      ${
+                        submission.status === "pending"
+                        ? `
+                          <button
+                            class="btn-small"
+                            onclick="openReviewModal('${submission.id}')">
+                            Review
+                          </button>
+                        `
+                        : `
+                          <span class="muted">
+                            Reviewed
+                          </span>
+                        `
+                      }
+
+                    </td>
+
+                  </tr>
+
+                `;
+
+              }).join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+  function openReviewModal(submissionId) {
+
+    selectedSubmission = null;
+
+    loadSubmissionForReview(submissionId);
+  }
+
+  async function loadSubmissionForReview(submissionId) {
+
+    const {
+      data: submission,
+      error
+    } = await db
+      .from("task_submissions")
+      .select("*")
+      .eq("id", submissionId)
+      .single();
+
+    if (error) {
+
+      console.error(error);
+
+      showMessage(
+        "Unable to load submission.",
+        "error"
+      );
+
+      return;
+    }
+
+    selectedSubmission = submission;
+
+    const {
+      data: task
+    } = await db
+      .from("orders")
+      .select("*")
+      .eq("id", submission.order_id)
+      .maybeSingle();
+
+    document.getElementById("reviewNote").value = "";
+
+    document.getElementById("reviewSubmissionInfo").innerHTML = `
+
+      <div class="info-box" style="margin-bottom:15px;">
+
+        <div class="info-label">
+          Task
+        </div>
+
+        <div class="info-value">
+          ${escapeHtml(
+            task?.product_name ||
+            "Task #" + submission.order_id
+          )}
+        </div>
+
+        <div
+          class="reward"
+          style="margin-top:8px;">
+          ${formatMoney(
+            submission.reward_amount ??
+            task?.reward ??
+            task?.amount ??
+            0
+          )}
+        </div>
+
+        <div style="margin-top:10px;">
+          <strong>Customer ID:</strong><br>
+          ${escapeHtml(submission.user_id)}
+        </div>
+
+      </div>
+
+      <h3>
+        Submitted Work
+      </h3>
+
+      <div class="info-box" style="
+        margin-top:8px;
+        margin-bottom:15px;
+        white-space:pre-wrap;
+      ">
+        ${escapeHtml(
+          submission.submission_text ||
+          "No written submission."
+        )}
+      </div>
+
+      ${
+        submission.submission_url
+        ? `
+          <div style="margin-bottom:15px;">
+            <strong>Submitted URL:</strong><br>
+            <a
+              href="${escapeHtml(
+                submission.submission_url
+              )}"
+              target="_blank"
+              rel="noopener noreferrer">
+              ${escapeHtml(
+                submission.submission_url
+              )}
+            </a>
+          </div>
+        `
+        : ""
+      }
+
+    `;
+
+    document.getElementById("reviewModal")
+      .classList.remove("hidden");
+  }
+
+  function closeReviewModal() {
+
+    document.getElementById("reviewModal")
+      .classList.add("hidden");
+
+    selectedSubmission = null;
+  }
+
+  async function reviewSubmission(status) {
+
+    if (!selectedSubmission) return;
+
+    const note =
+      document.getElementById("reviewNote")
+        .value.trim();
+
+    if (
+      status === "rejected" &&
+      !note
+    ) {
+
+      showMessage(
+        "Please provide a reason for rejecting the submission.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (
+      status === "approved" &&
+      !confirm(
+        "Approve this submission and credit the customer's reward?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+
+      const {
+        data,
+        error
+      } = await db.rpc(
+        "review_task_submission",
+        {
+          p_submission_id:
+            selectedSubmission.id,
+          p_status:
+            status,
+          p_review_note:
+            note || null
+        }
+      );
+
+      if (error) throw error;
+
+      closeReviewModal();
+
+      showMessage(
+        status === "approved"
+        ? "Submission approved and reward credited."
+        : "Submission rejected.",
+        "success"
+      );
+
+      await loadAdminDashboard();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showMessage(
+        error.message ||
+        "Unable to review submission.",
+        "error"
+      );
+    }
+  }
+
+  /*
+   ============================================================
+   ADMIN CUSTOMERS
+   ============================================================
+  */
+
+  async function loadAdminCustomers() {
+
+    const container =
+      document.getElementById("adminCustomersTable");
+
+    showLoading(
+      "adminCustomersTable",
+      "Loading customers..."
+    );
+
+    const {
+      data,
+      error
+    } = await db
+      .from("profiles")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+      return;
+    }
+
+    const customers = data || [];
+
+    document.getElementById("adminCustomerCount").textContent =
+      customers.length;
+
+    if (!customers.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No customers found.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML = `
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Joined</th>
+              <th>Action</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            ${
+              customers.map(customer => `
+
+                <tr>
+
+                  <td>
+                    ${escapeHtml(
+                      customer.full_name ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      customer.email ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      customer.phone ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatDate(
+                      customer.created_at
+                    )}
+                  </td>
+
+                  <td>
+
+                    <button
+                      class="btn-small"
+                      onclick="viewCustomer('${customer.id}')">
+                      View
+                    </button>
+
+                  </td>
+
+                </tr>
+
+              `).join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+  async function viewCustomer(customerId) {
+
+    const {
+      data: customer,
+      error
+    } = await db
+      .from("profiles")
+      .select("*")
+      .eq("id", customerId)
+      .maybeSingle();
+
+    if (error) {
+
+      console.error(error);
+
+      showMessage(
+        "Unable to load customer.",
+        "error"
+      );
+
+      return;
+    }
+
+    if (!customer) return;
+
+    const {
+      data: balance
+    } = await db
+      .from("account_balances")
+      .select("balance")
+      .eq("user_id", customerId)
+      .maybeSingle();
+
+    const {
+      data: matches
+    } = await db
+      .from("order_matches")
+      .select("id")
+      .eq("user_id", customerId);
+
+    const {
+      data: transactions
+    } = await db
+      .from("transactions")
+      .select("id")
+      .eq("user_id", customerId);
+
+    document.getElementById("customerDetails").innerHTML = `
+
+      <div class="profile-box">
+
+        <div class="info-box">
+          <div class="info-label">
+            Full name
+          </div>
+          <div class="info-value">
+            ${escapeHtml(
+              customer.full_name || "—"
+            )}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Email
+          </div>
+          <div class="info-value">
+            ${escapeHtml(
+              customer.email || "—"
+            )}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Phone
+          </div>
+          <div class="info-value">
+            ${escapeHtml(
+              customer.phone || "—"
+            )}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Balance
+          </div>
+          <div class="info-value">
+            ${formatMoney(
+              balance?.balance || 0
+            )}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Tasks accepted
+          </div>
+          <div class="info-value">
+            ${(matches || []).length}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Transactions
+          </div>
+          <div class="info-value">
+            ${(transactions || []).length}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Account ID
+          </div>
+          <div class="info-value">
+            ${escapeHtml(customer.id)}
+          </div>
+        </div>
+
+        <div class="info-box">
+          <div class="info-label">
+            Joined
+          </div>
+          <div class="info-value">
+            ${formatDate(customer.created_at)}
+          </div>
+        </div>
+
+      </div>
+    `;
+
+    document.getElementById("customerModal")
+      .classList.remove("hidden");
+  }
+
+  function closeCustomerModal() {
+
+    document.getElementById("customerModal")
+      .classList.add("hidden");
+  }
+
+  /*
+   ============================================================
+   ADMIN TRANSACTIONS
+   ============================================================
+  */
+
+  async function loadAdminTransactions() {
+
+    const container =
+      document.getElementById("adminTransactionsTable");
+
+    showLoading(
+      "adminTransactionsTable",
+      "Loading transactions..."
+    );
+
+    const {
+      data,
+      error
+    } = await db
+      .from("transactions")
+      .select("*")
+      .order("created_at", {
+        ascending: false
+      });
+
+    if (error) {
+
+      console.error(error);
+
+      container.innerHTML =
+        `<div class="alert alert-error">
+          ${escapeHtml(error.message)}
+        </div>`;
+
+      return;
+    }
+
+    const transactions = data || [];
+
+    if (!transactions.length) {
+
+      container.innerHTML =
+        `<div class="empty">
+          No transactions found.
+        </div>`;
+
+      return;
+    }
+
+    container.innerHTML = `
+
+      <div class="table-wrap">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Type</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>User ID</th>
+              <th>Reference</th>
+              <th>Date</th>
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            ${
+              transactions.map(transaction => `
+
+                <tr>
+
+                  <td>
+                    ${escapeHtml(
+                      transaction.type ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatMoney(
+                      transaction.amount
+                    )}
+                  </td>
+
+                  <td>
+                    <span class="badge ${
+                      transaction.status === "approved"
+                      ? "badge-green"
+                      : transaction.status === "rejected"
+                      ? "badge-red"
+                      : "badge-yellow"
+                    }">
+                      ${escapeHtml(
+                        transaction.status ||
+                        "—"
+                      )}
+                    </span>
+                  </td>
+
+                  <td>
+                    <small>
+                      ${escapeHtml(
+                        transaction.user_id
+                      )}
+                    </small>
+                  </td>
+
+                  <td>
+                    ${escapeHtml(
+                      transaction.reference ||
+                      "—"
+                    )}
+                  </td>
+
+                  <td>
+                    ${formatDate(
+                      transaction.created_at
+                    )}
+                  </td>
+
+                </tr>
+
+              `).join("")
+            }
+
+          </tbody>
+
+        </table>
+
+      </div>
+    `;
+  }
+
+  /*
+   ============================================================
+   MODAL CLOSE HANDLERS
+   ============================================================
+  */
+
+  document.getElementById("taskModal")
+    .addEventListener("click", function(event) {
+
+      if (event.target === this) {
+        closeTaskModal();
+      }
+
+    });
+
+  document.getElementById("submissionModal")
+    .addEventListener("click", function(event) {
+
+      if (event.target === this) {
+        closeSubmissionModal();
+      }
+
+    });
+
+  document.getElementById("reviewModal")
+    .addEventListener("click", function(event) {
+
+      if (event.target === this) {
+        closeReviewModal();
+      }
+
+    });
+
+  document.getElementById("customerModal")
+    .addEventListener("click", function(event) {
+
+      if (event.target === this) {
+        closeCustomerModal();
+      }
+
+    });
+
+  /*
+   ============================================================
+   AUTH STATE
+   ============================================================
+  */
+
+  db.auth.onAuthStateChange(
+    async (event, session) => {
+
+      if (
+        event === "SIGNED_IN" &&
+        session?.user
+      ) {
+
+        currentUser = session.user;
+
+        await initializeApp();
+
+      }
+
+      if (event === "SIGNED_OUT") {
+
+        currentUser = null;
+        currentProfile = null;
+        isAdmin = false;
+      }
+    }
+  );
+
+  /*
+   ============================================================
+   START
+   ============================================================
+  */
+
+  initializeApp();
+
+</script>
+
+</body>
+</html>
