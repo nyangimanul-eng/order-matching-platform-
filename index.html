@@ -3289,7 +3289,221 @@ async function initializeApp(){
 
 initializeApp();
 
-</script>
+<script>
+/* FINAL CUSTOMER VIEW FIX */
+window.viewCustomer = async function(customerId){
+
+ if(!customerId){
+  alert("Customer account ID is missing.");
+  return;
+ }
+
+ const modal=document.getElementById("customerModal");
+ const message=document.getElementById("customerModalMessage");
+ const content=document.getElementById("customerDetailsContent");
+
+ if(!modal||!content){
+  alert("Customer details window could not be found.");
+  return;
+ }
+
+ modal.classList.remove("hidden");
+ message.innerHTML="";
+ content.innerHTML='<div class="empty">Loading customer details...</div>';
+
+ try{
+
+  const id=String(customerId).trim();
+
+  const[
+   profileResult,
+   balanceResult,
+   transactionResult,
+   matchResult
+  ]=await Promise.all([
+
+   supabaseClient
+    .from("profiles")
+    .select("id,full_name,phone,created_at")
+    .eq("id",id)
+    .maybeSingle(),
+
+   supabaseClient
+    .from("account_balances")
+    .select("balance")
+    .eq("user_id",id)
+    .maybeSingle(),
+
+   supabaseClient
+    .from("transactions")
+    .select("id,type,amount,status,reference,created_at")
+    .eq("user_id",id)
+    .order("created_at",{ascending:false})
+    .limit(10),
+
+   supabaseClient
+    .from("order_matches")
+    .select("id,order_id,matched_at")
+    .eq("user_id",id)
+    .order("matched_at",{ascending:false})
+    .limit(10)
+
+  ]);
+
+  if(profileResult.error)
+   throw profileResult.error;
+
+  if(balanceResult.error)
+   throw balanceResult.error;
+
+  if(transactionResult.error)
+   throw transactionResult.error;
+
+  if(matchResult.error)
+   throw matchResult.error;
+
+  const customer=
+   allCustomers.find(x=>getCustomerId(x)===id)||{};
+
+  const profile=profileResult.data||{};
+  const balance=Number(balanceResult.data?.balance||0);
+  const transactions=transactionResult.data||[];
+  const matches=matchResult.data||[];
+
+  content.innerHTML=`
+
+   <div class="customer-detail-grid">
+
+    <div class="customer-detail">
+     <small>Full name</small>
+     <strong>
+      ${escapeHtml(
+       profile.full_name||
+       customer.full_name||
+       "Not provided"
+      )}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Email</small>
+     <strong>
+      ${escapeHtml(customer.email||"—")}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>M-Pesa phone</small>
+     <strong>
+      ${escapeHtml(
+       profile.phone||
+       customer.phone||
+       "Not provided"
+      )}
+     </strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Account balance</small>
+     <strong>KES ${money(balance)}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Account ID</small>
+     <strong>${escapeHtml(id)}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Transactions</small>
+     <strong>${transactions.length}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Matches</small>
+     <strong>${matches.length}</strong>
+    </div>
+
+    <div class="customer-detail">
+     <small>Joined</small>
+     <strong>
+      ${dateTime(
+       profile.created_at||
+       customer.created_at
+      )}
+     </strong>
+    </div>
+
+   </div>
+
+   <h3 style="margin:0 0 10px">
+    Recent Transactions
+   </h3>
+
+   ${
+    transactions.length
+    ?`
+
+     <div class="table-wrap">
+
+      <table>
+
+       <thead>
+        <tr>
+         <th>Type</th>
+         <th>Amount</th>
+         <th>Status</th>
+         <th>Reference</th>
+         <th>Date</th>
+        </tr>
+       </thead>
+
+       <tbody>
+
+        ${transactions.map(t=>`
+
+         <tr>
+          <td>${escapeHtml(t.type)}</td>
+          <td>KES ${money(t.amount)}</td>
+          <td>${statusBadge(t.status)}</td>
+          <td>${escapeHtml(t.reference||"—")}</td>
+          <td>${dateTime(t.created_at)}</td>
+         </tr>
+
+        `).join("")}
+
+       </tbody>
+
+      </table>
+
+     </div>
+
+    `
+    :`
+     <div class="empty">
+      No transactions found.
+     </div>
+    `
+   }
+
+  `;
+
+ }catch(err){
+
+  console.error("Customer View error:",err);
+
+  message.innerHTML=
+   `<div class="message error">
+    Unable to load customer details:
+    ${escapeHtml(err.message||"Unknown error")}
+   </div>`;
+
+  content.innerHTML=
+   '<div class="empty">Customer details could not be loaded.</div>';
+
+ }
+
+};
+
 
 </body>
 </html>
