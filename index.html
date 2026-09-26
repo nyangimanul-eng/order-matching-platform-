@@ -1,1 +1,2485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OrderMatch - Paid Tasks</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f4f7fb;
+  color:#172033
+}
+button,input,textarea,select{font:inherit}
+button{
+  border:0;
+  border-radius:9px;
+  padding:11px 15px;
+  cursor:pointer;
+  background:#1769e0;
+  color:white;
+  font-weight:bold
+}
+button:hover{opacity:.9}
+button.secondary{background:#64748b}
+button.danger{background:#dc2626}
+button.success{background:#16a34a}
+button.warning{background:#d97706}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+header{
+  background:#123b78;
+  color:white;
+  padding:15px 18px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:sticky;
+  top:0;
+  z-index:10
+}
+header h1{margin:0;font-size:21px}
+header span{font-size:13px}
+
+.container{
+  max-width:1150px;
+  margin:auto;
+  padding:20px
+}
+
+.card{
+  background:white;
+  border-radius:14px;
+  padding:18px;
+  margin-bottom:18px;
+  box-shadow:0 3px 14px rgba(0,0,0,.07)
+}
+
+.hidden{display:none!important}
+
+h2,h3{margin-top:0}
+
+.auth{
+  max-width:430px;
+  margin:45px auto
+}
+
+input,textarea,select{
+  width:100%;
+  padding:12px;
+  margin:7px 0 13px;
+  border:1px solid #ccd5e1;
+  border-radius:8px;
+  background:white
+}
+
+textarea{min-height:110px;resize:vertical}
+
+.nav{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-bottom:18px
+}
+.nav button{background:#334155}
+.nav button.active{background:#1769e0}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:14px
+}
+
+.stat{
+  background:white;
+  padding:18px;
+  border-radius:13px;
+  box-shadow:0 2px 10px rgba(0,0,0,.06)
+}
+.stat small{color:#64748b}
+.stat strong{
+  display:block;
+  font-size:25px;
+  margin-top:8px
+}
+
+.task{
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:16px;
+  margin:12px 0
+}
+.task-header{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start
+}
+.reward{
+  color:#15803d;
+  font-size:20px;
+  font-weight:bold
+}
+.badge{
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:bold;
+  background:#e2e8f0
+}
+.badge.available{background:#dcfce7;color:#166534}
+.badge.matched{background:#fef3c7;color:#92400e}
+.badge.pending{background:#dbeafe;color:#1d4ed8}
+.badge.approved{background:#dcfce7;color:#166534}
+.badge.rejected{background:#fee2e2;color:#991b1b}
+.badge.completed{background:#dcfce7;color:#166534}
+
+.row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap
+}
+
+.row>*{flex:1;min-width:130px}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white
+}
+th,td{
+  padding:11px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+  font-size:14px
+}
+th{background:#f1f5f9}
+
+.notice{
+  padding:12px;
+  border-radius:8px;
+  margin-bottom:15px;
+  background:#eff6ff;
+  color:#1e40af
+}
+.error{
+  background:#fee2e2;
+  color:#991b1b
+}
+.success-msg{
+  background:#dcfce7;
+  color:#166534
+}
+
+.small{
+  font-size:13px;
+  color:#64748b
+}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:15px;
+  z-index:50
+}
+.modal-box{
+  background:white;
+  width:100%;
+  max-width:650px;
+  max-height:90vh;
+  overflow:auto;
+  border-radius:15px;
+  padding:20px
+}
+
+footer{
+  text-align:center;
+  padding:30px;
+  color:#64748b;
+  font-size:13px
+}
+
+@media(max-width:600px){
+  .container{padding:12px}
+  header{padding:13px}
+  header h1{font-size:18px}
+  table{font-size:12px}
+  th,td{padding:8px}
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div>
+    <h1>OrderMatch</h1>
+    <span>Earn by completing paid tasks</span>
+  </div>
+  <div id="headerUser"></div>
+</header>
+
+<div id="authPage" class="container auth">
+
+  <div class="card">
+
+    <h2 id="authTitle">Login</h2>
+
+    <div id="authMessage"></div>
+
+    <label>Email</label>
+    <input id="authEmail" type="email" placeholder="Email">
+
+    <label>Password</label>
+    <input id="authPassword" type="password" placeholder="Password">
+
+    <div id="signupFields" class="hidden">
+
+      <label>Full name</label>
+      <input id="signupName" type="text" placeholder="Full name">
+
+      <label>Phone number</label>
+      <input id="signupPhone" type="text" placeholder="07XXXXXXXX">
+
+    </div>
+
+    <button id="authButton" onclick="handleAuth()">Login</button>
+
+    <p>
+      <button class="secondary" style="width:100%;margin-top:10px"
+        onclick="toggleAuth()">Create account</button>
+    </p>
+
+    <p>
+      <button class="secondary" style="width:100%"
+        onclick="resetPassword()">Forgot password?</button>
+    </p>
+
+  </div>
+</div>
+
+
+<div id="appPage" class="hidden">
+
+<div class="container">
+
+  <div class="nav">
+
+    <button onclick="showPage('dashboard')" id="navDashboard">
+      Dashboard
+    </button>
+
+    <button onclick="showPage('tasks')" id="navTasks">
+      Available Tasks
+    </button>
+
+    <button onclick="showPage('mytasks')" id="navMyTasks">
+      My Tasks
+    </button>
+
+    <button onclick="showPage('balance')" id="navBalance">
+      Balance
+    </button>
+
+    <button onclick="showPage('profile')" id="navProfile">
+      Profile
+    </button>
+
+    <button id="adminNav" class="hidden"
+      onclick="showPage('admin')">
+      Admin
+    </button>
+
+    <button class="danger" onclick="logout()">
+      Logout
+    </button>
+
+  </div>
+
+
+  <!-- DASHBOARD -->
+
+  <section id="page-dashboard">
+
+    <div id="dashboardMessage"></div>
+
+    <div class="stats">
+
+      <div class="stat">
+        <small>Available tasks</small>
+        <strong id="statAvailable">0</strong>
+      </div>
+
+      <div class="stat">
+        <small>My tasks</small>
+        <strong id="statMyTasks">0</strong>
+      </div>
+
+      <div class="stat">
+        <small>Pending submissions</small>
+        <strong id="statPending">0</strong>
+      </div>
+
+      <div class="stat">
+        <small>Balance</small>
+        <strong id="statBalance">KES 0.00</strong>
+      </div>
+
+    </div>
+
+    <div class="card" style="margin-top:18px">
+      <h2>Welcome to OrderMatch</h2>
+      <p>
+        Complete available tasks, submit your work for review,
+        and receive your approved rewards in your OrderMatch balance.
+      </p>
+
+      <button onclick="showPage('tasks')">
+        Find Paid Tasks
+      </button>
+    </div>
+
+  </section>
+
+
+  <!-- AVAILABLE TASKS -->
+
+  <section id="page-tasks" class="hidden">
+
+    <div class="card">
+
+      <h2>Available Paid Tasks</h2>
+
+      <p class="small">
+        Choose a task you can complete and accept it.
+        You do not need to deposit money to work on a task.
+      </p>
+
+      <div id="availableTasks">
+        Loading tasks...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- MY TASKS -->
+
+  <section id="page-mytasks" class="hidden">
+
+    <div class="card">
+
+      <h2>My Tasks</h2>
+
+      <div id="myTasks">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- BALANCE -->
+
+  <section id="page-balance" class="hidden">
+
+    <div class="card">
+
+      <h2>My Balance</h2>
+
+      <div class="stats">
+
+        <div class="stat">
+          <small>Available balance</small>
+          <strong id="balanceAmount">KES 0.00</strong>
+        </div>
+
+      </div>
+
+      <hr style="margin:20px 0">
+
+      <h3>Request Withdrawal</h3>
+
+      <p class="small">
+        Your balance comes from approved task rewards.
+      </p>
+
+      <label>Amount (KES)</label>
+      <input id="withdrawAmount" type="number" min="1"
+        placeholder="Enter amount">
+
+      <label>M-Pesa phone</label>
+      <input id="withdrawPhone" type="text"
+        placeholder="07XXXXXXXX">
+
+      <button onclick="requestWithdrawal()">
+        Request Withdrawal
+      </button>
+
+      <div id="withdrawMessage" style="margin-top:15px"></div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>Balance History</h2>
+
+      <div id="balanceHistory">
+        Loading...
+      </div>
+
+    </div>
+
+
+    <div class="card">
+
+      <h2>Transactions</h2>
+
+      <div id="transactions">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- PROFILE -->
+
+  <section id="page-profile" class="hidden">
+
+    <div class="card">
+
+      <h2>My Profile</h2>
+
+      <label>Full name</label>
+      <input id="profileName">
+
+      <label>Phone</label>
+      <input id="profilePhone">
+
+      <button onclick="saveProfile()">
+        Save Profile
+      </button>
+
+      <div id="profileMessage" style="margin-top:12px"></div>
+
+    </div>
+
+  </section>
+
+
+  <!-- ADMIN -->
+
+  <section id="page-admin" class="hidden">
+
+    <div class="card">
+
+      <h2>Admin Dashboard</h2>
+
+      <div class="stats">
+
+        <div class="stat">
+          <small>Total tasks</small>
+          <strong id="adminTaskCount">0</strong>
+        </div>
+
+        <div class="stat">
+          <small>Available</small>
+          <strong id="adminAvailableCount">0</strong>
+        </div>
+
+        <div class="stat">
+          <small>Pending submissions</small>
+          <strong id="adminPendingCount">0</strong>
+        </div>
+
+        <div class="stat">
+          <small>Customers</small>
+          <strong id="adminCustomerCount">0</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- CREATE TASK -->
+
+    <div class="card">
+
+      <h2>Create New Paid Task</h2>
+
+      <label>Task title</label>
+      <input id="newTaskTitle"
+        placeholder="Example: Collect information about a local business">
+
+      <label>Reward (KES)</label>
+      <input id="newTaskReward"
+        type="number"
+        min="1"
+        placeholder="Example: 100">
+
+      <label>Description</label>
+      <textarea id="newTaskDescription"
+        placeholder="Explain what the customer needs to do"></textarea>
+
+      <label>Requirements</label>
+      <textarea id="newTaskRequirements"
+        placeholder="Explain exactly what the customer must submit"></textarea>
+
+      <label>Estimated time (minutes)</label>
+      <input id="newTaskMinutes"
+        type="number"
+        min="1"
+        placeholder="Example: 20">
+
+      <label>Submission type</label>
+      <select id="newTaskSubmissionType">
+        <option value="text">Text / written answer</option>
+        <option value="url">URL / link</option>
+        <option value="text_url">Text + URL</option>
+      </select>
+
+      <button class="success" onclick="createTask()">
+        Create Task
+      </button>
+
+      <div id="createTaskMessage" style="margin-top:12px"></div>
+
+    </div>
+
+
+    <!-- MANAGE TASKS -->
+
+    <div class="card">
+
+      <h2>Manage Tasks</h2>
+
+      <div id="adminTasks">
+        Loading...
+      </div>
+
+    </div>
+
+
+    <!-- SUBMISSIONS -->
+
+    <div class="card">
+
+      <h2>Customer Submissions</h2>
+
+      <div id="adminSubmissions">
+        Loading...
+      </div>
+
+    </div>
+
+  </section>
+
+</div>
+
+<footer>
+  OrderMatch — Paid task marketplace
+</footer>
+
+</div>
+
+
+<!-- TASK MODAL -->
+
+<div id="taskModal" class="modal hidden">
+
+  <div class="modal-box">
+
+    <div id="taskModalContent"></div>
+
+    <button class="secondary"
+      onclick="closeModal()">
+      Close
+    </button>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+   SUPABASE CONNECTION
+   ========================================================= */
+
+const SUPABASE_URL =
+  "https://bdflurarenkcvcnttrya.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+
+let currentUser = null;
+let isAdminUser = false;
+let authMode = "login";
+
+
+/* =========================================================
+   START
+   ========================================================= */
+
+document.addEventListener("DOMContentLoaded", async () => {
+
+  const {
+    data: { session }
+  } = await supabaseClient.auth.getSession();
+
+  if(session){
+    currentUser = session.user;
+    await startApp();
+  }
+
+});
+
+
+supabaseClient.auth.onAuthStateChange(
+  async (event, session) => {
+
+    if(session && !currentUser){
+      currentUser = session.user;
+      await startApp();
+    }
+
+  }
+);
+
+
+/* =========================================================
+   AUTH
+   ========================================================= */
+
+function toggleAuth(){
+
+  authMode =
+    authMode === "login"
+      ? "signup"
+      : "login";
+
+  document.getElementById("authTitle").textContent =
+    authMode === "login"
+      ? "Login"
+      : "Create Account";
+
+  document.getElementById("authButton").textContent =
+    authMode === "login"
+      ? "Login"
+      : "Create Account";
+
+  document.getElementById("signupFields")
+    .classList.toggle(
+      "hidden",
+      authMode !== "signup"
+    );
+
+}
+
+
+async function handleAuth(){
+
+  const email =
+    document.getElementById("authEmail").value.trim();
+
+  const password =
+    document.getElementById("authPassword").value;
+
+  const message =
+    document.getElementById("authMessage");
+
+  message.innerHTML = "";
+
+  if(!email || !password){
+
+    message.innerHTML =
+      '<div class="notice error">Enter your email and password.</div>';
+
+    return;
+  }
+
+
+  if(authMode === "signup"){
+
+    const name =
+      document.getElementById("signupName").value.trim();
+
+    const phone =
+      document.getElementById("signupPhone").value.trim();
+
+    if(!name){
+
+      message.innerHTML =
+        '<div class="notice error">Enter your full name.</div>';
+
+      return;
+    }
+
+
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+
+        email,
+        password,
+
+        options:{
+          data:{
+            full_name:name,
+            phone:phone
+          }
+        }
+
+      });
+
+
+    if(error){
+
+      message.innerHTML =
+        `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+      return;
+    }
+
+
+    if(data.session){
+
+      currentUser = data.user;
+
+      await saveProfileData(
+        name,
+        phone
+      );
+
+      await startApp();
+
+    }else{
+
+      message.innerHTML =
+        '<div class="notice success-msg">Account created. Check your email to confirm your account.</div>';
+
+    }
+
+    return;
+  }
+
+
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email,
+      password
+    });
+
+
+  if(error){
+
+    message.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  currentUser = data.user;
+
+  await startApp();
+
+}
+
+
+async function resetPassword(){
+
+  const email =
+    document.getElementById("authEmail").value.trim();
+
+  if(!email){
+
+    document.getElementById("authMessage").innerHTML =
+      '<div class="notice error">Enter your email first.</div>';
+
+    return;
+  }
+
+
+  const { error } =
+    await supabaseClient.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo:
+          window.location.origin +
+          window.location.pathname
+      }
+    );
+
+
+  document.getElementById("authMessage").innerHTML =
+    error
+      ? `<div class="notice error">${escapeHtml(error.message)}</div>`
+      : '<div class="notice success-msg">Password reset instructions have been sent.</div>';
+
+}
+
+
+async function logout(){
+
+  await supabaseClient.auth.signOut();
+
+  currentUser = null;
+  isAdminUser = false;
+
+  document.getElementById("appPage")
+    .classList.add("hidden");
+
+  document.getElementById("authPage")
+    .classList.remove("hidden");
+
+}
+
+
+/* =========================================================
+   START APPLICATION
+   ========================================================= */
+
+async function startApp(){
+
+  document.getElementById("authPage")
+    .classList.add("hidden");
+
+  document.getElementById("appPage")
+    .classList.remove("hidden");
+
+  document.getElementById("headerUser").textContent =
+    currentUser.email || "";
+
+  await checkAdmin();
+
+  await loadProfile();
+
+  await loadDashboard();
+
+  showPage("dashboard");
+
+}
+
+
+async function checkAdmin(){
+
+  try{
+
+    const { data, error } =
+      await supabaseClient.rpc("is_admin");
+
+    isAdminUser =
+      !error && data === true;
+
+  }catch(e){
+
+    isAdminUser = false;
+
+  }
+
+
+  document.getElementById("adminNav")
+    .classList.toggle(
+      "hidden",
+      !isAdminUser
+    );
+
+}
+
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+function showPage(page){
+
+  const pages = [
+    "dashboard",
+    "tasks",
+    "mytasks",
+    "balance",
+    "profile",
+    "admin"
+  ];
+
+  pages.forEach(p => {
+
+    const element =
+      document.getElementById("page-" + p);
+
+    if(element)
+      element.classList.toggle(
+        "hidden",
+        p !== page
+      );
+
+  });
+
+
+  document.querySelectorAll(".nav button")
+    .forEach(btn =>
+      btn.classList.remove("active")
+    );
+
+
+  const nav =
+    document.getElementById(
+      "nav" +
+      page.charAt(0).toUpperCase() +
+      page.slice(1)
+    );
+
+  if(nav)
+    nav.classList.add("active");
+
+
+  if(page === "dashboard")
+    loadDashboard();
+
+  if(page === "tasks")
+    loadAvailableTasks();
+
+  if(page === "mytasks")
+    loadMyTasks();
+
+  if(page === "balance")
+    loadBalancePage();
+
+  if(page === "profile")
+    loadProfile();
+
+  if(page === "admin" && isAdminUser)
+    loadAdmin();
+
+}
+
+
+/* =========================================================
+   DASHBOARD
+   ========================================================= */
+
+async function loadDashboard(){
+
+  await loadBalance();
+
+  const {
+    data: available
+  } = await supabaseClient
+    .from("orders")
+    .select("id", {count:"exact",head:true})
+    .eq("status","available");
+
+
+  const {
+    data: matches
+  } = await supabaseClient
+    .from("order_matches")
+    .select("id", {count:"exact",head:true})
+    .eq("user_id", currentUser.id);
+
+
+  const {
+    data: submissions
+  } = await supabaseClient
+    .from("task_submissions")
+    .select("id", {count:"exact",head:true})
+    .eq("user_id", currentUser.id)
+    .eq("status","pending");
+
+
+  document.getElementById("statAvailable")
+    .textContent =
+      available === null ? 0 : available;
+
+  document.getElementById("statMyTasks")
+    .textContent =
+      matches === null ? 0 : matches;
+
+  document.getElementById("statPending")
+    .textContent =
+      submissions === null ? 0 : submissions;
+
+}
+
+
+/* =========================================================
+   BALANCE
+   ========================================================= */
+
+async function loadBalance(){
+
+  let balance = 0;
+
+  const { data, error } =
+    await supabaseClient
+      .from("account_balances")
+      .select("balance")
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+
+  if(!error && data)
+    balance = Number(data.balance || 0);
+
+
+  document.getElementById("statBalance")
+    .textContent =
+      "KES " + balance.toFixed(2);
+
+  document.getElementById("balanceAmount")
+    .textContent =
+      "KES " + balance.toFixed(2);
+
+}
+
+
+async function loadBalancePage(){
+
+  await loadBalance();
+  await loadBalanceHistory();
+  await loadTransactions();
+
+}
+
+
+async function loadBalanceHistory(){
+
+  const box =
+    document.getElementById("balanceHistory");
+
+  const { data, error } =
+    await supabaseClient
+      .from("balance_ledger")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order("created_at",{ascending:false})
+      .limit(50);
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || data.length === 0){
+
+    box.innerHTML =
+      "<p>No balance history yet.</p>";
+
+    return;
+  }
+
+
+  box.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Balance After</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(row => `
+          <tr>
+            <td>${formatDate(row.created_at)}</td>
+            <td>${escapeHtml(row.entry_type || "")}</td>
+            <td>KES ${Number(row.amount || 0).toFixed(2)}</td>
+            <td>KES ${Number(row.balance_after || 0).toFixed(2)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+
+}
+
+
+async function loadTransactions(){
+
+  const box =
+    document.getElementById("transactions");
+
+  const { data, error } =
+    await supabaseClient
+      .from("transactions")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order("created_at",{ascending:false})
+      .limit(50);
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || data.length === 0){
+
+    box.innerHTML =
+      "<p>No transactions yet.</p>";
+
+    return;
+  }
+
+
+  box.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(row => `
+          <tr>
+            <td>${formatDate(row.created_at)}</td>
+            <td>${escapeHtml(row.type || row.transaction_type || "")}</td>
+            <td>KES ${Number(row.amount || 0).toFixed(2)}</td>
+            <td>${escapeHtml(row.status || "")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+
+}
+
+
+/* =========================================================
+   AVAILABLE TASKS
+   ========================================================= */
+
+async function loadAvailableTasks(){
+
+  const box =
+    document.getElementById("availableTasks");
+
+  box.innerHTML = "Loading tasks...";
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("orders")
+      .select(`
+        id,
+        product_name,
+        amount,
+        reward,
+        description,
+        requirements,
+        estimated_minutes,
+        submission_type,
+        status,
+        created_at
+      `)
+      .eq("status","available")
+      .order("created_at",{ascending:false});
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || data.length === 0){
+
+    box.innerHTML =
+      '<div class="notice">There are currently no available tasks.</div>';
+
+    return;
+  }
+
+
+  box.innerHTML =
+    data.map(task => taskCard(task,true)).join("");
+
+}
+
+
+function taskCard(task, showAccept){
+
+  const reward =
+    Number(
+      task.reward ??
+      task.amount ??
+      0
+    );
+
+
+  return `
+    <div class="task">
+
+      <div class="task-header">
+
+        <div>
+          <h3>${escapeHtml(task.product_name)}</h3>
+
+          <span class="badge ${escapeHtml(task.status)}">
+            ${escapeHtml(task.status)}
+          </span>
+        </div>
+
+        <div class="reward">
+          KES ${reward.toFixed(2)}
+        </div>
+
+      </div>
+
+      <p>
+        ${escapeHtml(
+          task.description ||
+          "Paid task available on OrderMatch."
+        )}
+      </p>
+
+      <p class="small">
+        Estimated time:
+        ${task.estimated_minutes
+          ? escapeHtml(String(task.estimated_minutes)) + " minutes"
+          : "Not specified"}
+      </p>
+
+      <div class="row">
+
+        <button onclick='viewTask(${JSON.stringify(task)})'>
+          View Details
+        </button>
+
+        ${
+          showAccept
+          ? `
+            <button class="success"
+              onclick="acceptTask(${Number(task.id)})">
+              Accept Task
+            </button>
+          `
+          : ""
+        }
+
+      </div>
+
+    </div>
+  `;
+
+}
+
+
+/* =========================================================
+   VIEW TASK
+   ========================================================= */
+
+function viewTask(task){
+
+  const reward =
+    Number(task.reward ?? task.amount ?? 0);
+
+
+  document.getElementById("taskModalContent").innerHTML = `
+
+    <h2>${escapeHtml(task.product_name)}</h2>
+
+    <p class="reward">
+      KES ${reward.toFixed(2)}
+    </p>
+
+    <h3>Description</h3>
+
+    <p>
+      ${escapeHtml(
+        task.description ||
+        "No description provided."
+      )}
+    </p>
+
+    <h3>Requirements</h3>
+
+    <p>
+      ${escapeHtml(
+        task.requirements ||
+        "Follow the instructions provided by the task owner."
+      )}
+    </p>
+
+    <h3>Submission</h3>
+
+    <p>
+      ${escapeHtml(
+        task.submission_type ||
+        "text"
+      )}
+    </p>
+
+    <p class="small">
+      Estimated time:
+      ${task.estimated_minutes
+        ? escapeHtml(String(task.estimated_minutes)) + " minutes"
+        : "Not specified"}
+    </p>
+
+    <button class="success"
+      onclick="acceptTask(${Number(task.id)});closeModal()">
+      Accept Task
+    </button>
+
+  `;
+
+  document.getElementById("taskModal")
+    .classList.remove("hidden");
+
+}
+
+
+function closeModal(){
+
+  document.getElementById("taskModal")
+    .classList.add("hidden");
+
+}
+
+
+/* =========================================================
+   ACCEPT TASK
+   ========================================================= */
+
+async function acceptTask(orderId){
+
+  if(!currentUser){
+
+    alert("Please log in first.");
+
+    return;
+  }
+
+
+  if(!confirm("Accept this task?"))
+    return;
+
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "accept_task",
+      {
+        p_order_id: orderId
+      }
+    );
+
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  alert("Task accepted successfully.");
+
+  await loadAvailableTasks();
+
+  await loadMyTasks();
+
+  await loadDashboard();
+
+  showPage("mytasks");
+
+}
+
+
+/* =========================================================
+   MY TASKS
+   ========================================================= */
+
+async function loadMyTasks(){
+
+  const box =
+    document.getElementById("myTasks");
+
+  box.innerHTML = "Loading...";
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("order_matches")
+      .select(`
+        id,
+        order_id,
+        matched_at,
+        orders(
+          id,
+          product_name,
+          amount,
+          reward,
+          description,
+          requirements,
+          estimated_minutes,
+          submission_type,
+          status
+        )
+      `)
+      .eq("user_id", currentUser.id)
+      .order("matched_at",{ascending:false});
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || data.length === 0){
+
+    box.innerHTML =
+      "<p>You have not accepted any tasks yet.</p>";
+
+    return;
+  }
+
+
+  const ids =
+    data.map(x => x.order_id);
+
+
+  let submissions = [];
+
+
+  if(ids.length){
+
+    const result =
+      await supabaseClient
+        .from("task_submissions")
+        .select("*")
+        .eq("user_id",currentUser.id)
+        .in("order_id",ids)
+        .order("submitted_at",{ascending:false});
+
+    submissions =
+      result.data || [];
+
+  }
+
+
+  box.innerHTML =
+    data.map(match => {
+
+      const task =
+        match.orders;
+
+      if(!task)
+        return "";
+
+      const submission =
+        submissions.find(
+          s => s.order_id === match.order_id
+        );
+
+
+      return `
+        <div class="task">
+
+          <div class="task-header">
+
+            <div>
+              <h3>
+                ${escapeHtml(task.product_name)}
+              </h3>
+
+              <span class="badge ${escapeHtml(task.status)}">
+                ${escapeHtml(task.status)}
+              </span>
+            </div>
+
+            <div class="reward">
+              KES ${Number(
+                task.reward ??
+                task.amount ??
+                0
+              ).toFixed(2)}
+            </div>
+
+          </div>
+
+          <p>
+            ${escapeHtml(task.description || "")}
+          </p>
+
+          ${
+            submission
+            ? `
+              <p>
+                Submission:
+                <span class="badge ${escapeHtml(submission.status)}">
+                  ${escapeHtml(submission.status)}
+                </span>
+              </p>
+
+              ${
+                submission.status === "rejected"
+                ? `
+                  <p class="notice error">
+                    ${escapeHtml(
+                      submission.review_note ||
+                      "Your submission was rejected. You may submit again."
+                    )}
+                  </p>
+                `
+                : ""
+              }
+
+              ${
+                submission.status === "approved"
+                ? `
+                  <p class="notice success-msg">
+                    Approved. Reward credited to your balance.
+                  </p>
+                `
+                : ""
+              }
+
+              ${
+                submission.status === "pending"
+                ? `
+                  <p class="notice">
+                    Your work is waiting for admin review.
+                  </p>
+                `
+                : ""
+              }
+            `
+            : ""
+          }
+
+          ${
+            !submission ||
+            submission.status === "rejected"
+            ? `
+              <button class="success"
+                onclick='openSubmission(${JSON.stringify(task)})'>
+                Submit Work
+              </button>
+            `
+            : ""
+          }
+
+        </div>
+      `;
+
+    }).join("");
+
+}
+
+
+/* =========================================================
+   SUBMISSION
+   ========================================================= */
+
+function openSubmission(task){
+
+  const submissionType =
+    task.submission_type || "text";
+
+
+  document.getElementById("taskModalContent").innerHTML = `
+
+    <h2>Submit Work</h2>
+
+    <h3>${escapeHtml(task.product_name)}</h3>
+
+    <p class="small">
+      Reward: KES ${Number(
+        task.reward ?? task.amount ?? 0
+      ).toFixed(2)}
+    </p>
+
+    <div class="notice">
+      ${escapeHtml(
+        task.requirements ||
+        "Submit clear evidence that you completed the task."
+      )}
+    </div>
+
+    <label>Your work / answer</label>
+
+    <textarea id="submissionText"
+      placeholder="Enter your completed work or answer"></textarea>
+
+    ${
+      submissionType === "url" ||
+      submissionType === "text_url"
+      ? `
+        <label>Proof / URL</label>
+
+        <input id="submissionUrl"
+          type="url"
+          placeholder="https://...">
+      `
+      : ""
+    }
+
+    <button class="success"
+      onclick="submitTaskWork(${Number(task.id)})">
+      Submit for Review
+    </button>
+
+  `;
+
+  document.getElementById("taskModal")
+    .classList.remove("hidden");
+
+}
+
+
+async function submitTaskWork(orderId){
+
+  const text =
+    document.getElementById("submissionText")
+      ?.value.trim() || null;
+
+  const url =
+    document.getElementById("submissionUrl")
+      ?.value.trim() || null;
+
+
+  if(!text && !url){
+
+    alert("Please provide your completed work.");
+
+    return;
+  }
+
+
+  const { data: existing } =
+    await supabaseClient
+      .from("task_submissions")
+      .select("id,status")
+      .eq("order_id",orderId)
+      .eq("user_id",currentUser.id)
+      .order("submitted_at",{ascending:false})
+      .limit(1);
+
+
+  if(existing && existing.length){
+
+    const latest =
+      existing[0];
+
+    if(latest.status === "pending"){
+
+      alert("You already have a submission waiting for review.");
+
+      return;
+    }
+
+  }
+
+
+  const { error } =
+    await supabaseClient
+      .from("task_submissions")
+      .insert({
+
+        order_id:orderId,
+
+        user_id:currentUser.id,
+
+        submission_text:text,
+
+        submission_url:url,
+
+        status:"pending"
+
+      });
+
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  closeModal();
+
+  alert("Your work has been submitted for review.");
+
+  await loadMyTasks();
+
+  await loadDashboard();
+
+}
+
+
+/* =========================================================
+   PROFILE
+   ========================================================= */
+
+async function loadProfile(){
+
+  const { data } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id",currentUser.id)
+      .maybeSingle();
+
+
+  if(data){
+
+    document.getElementById("profileName").value =
+      data.full_name || "";
+
+    document.getElementById("profilePhone").value =
+      data.phone || "";
+
+  }else{
+
+    document.getElementById("profileName").value =
+      currentUser.user_metadata?.full_name || "";
+
+    document.getElementById("profilePhone").value =
+      currentUser.user_metadata?.phone || "";
+
+  }
+
+}
+
+
+async function saveProfileData(name,phone){
+
+  await supabaseClient
+    .from("profiles")
+    .upsert({
+
+      id:currentUser.id,
+
+      full_name:name,
+
+      phone:phone
+
+    });
+
+}
+
+
+async function saveProfile(){
+
+  const name =
+    document.getElementById("profileName")
+      .value.trim();
+
+  const phone =
+    document.getElementById("profilePhone")
+      .value.trim();
+
+
+  const { error } =
+    await supabaseClient
+      .from("profiles")
+      .upsert({
+
+        id:currentUser.id,
+
+        full_name:name,
+
+        phone:phone
+
+      });
+
+
+  const box =
+    document.getElementById("profileMessage");
+
+
+  box.innerHTML =
+    error
+      ? `<div class="notice error">${escapeHtml(error.message)}</div>`
+      : '<div class="notice success-msg">Profile saved.</div>';
+
+}
+
+
+/* =========================================================
+   WITHDRAWAL
+   ========================================================= */
+
+async function requestWithdrawal(){
+
+  const amount =
+    Number(
+      document.getElementById("withdrawAmount")
+        .value
+    );
+
+  const phone =
+    document.getElementById("withdrawPhone")
+      .value.trim();
+
+
+  const box =
+    document.getElementById("withdrawMessage");
+
+
+  if(!amount || amount <= 0){
+
+    box.innerHTML =
+      '<div class="notice error">Enter a valid amount.</div>';
+
+    return;
+  }
+
+
+  if(!phone){
+
+    box.innerHTML =
+      '<div class="notice error">Enter your M-Pesa phone number.</div>';
+
+    return;
+  }
+
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "request_withdrawal",
+      {
+        p_amount:amount,
+        p_phone:phone
+      }
+    );
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  box.innerHTML =
+    '<div class="notice success-msg">Withdrawal request submitted.</div>';
+
+  document.getElementById("withdrawAmount").value = "";
+
+  await loadBalance();
+
+  await loadBalanceHistory();
+
+  await loadTransactions();
+
+}
+
+
+/* =========================================================
+   ADMIN
+   ========================================================= */
+
+async function loadAdmin(){
+
+  if(!isAdminUser)
+    return;
+
+
+  await loadAdminStats();
+
+  await loadAdminTasks();
+
+  await loadAdminSubmissions();
+
+}
+
+
+async function loadAdminStats(){
+
+  const {
+    count:total
+  } =
+    await supabaseClient
+      .from("orders")
+      .select("id",{count:"exact",head:true});
+
+
+  const {
+    count:available
+  } =
+    await supabaseClient
+      .from("orders")
+      .select("id",{count:"exact",head:true})
+      .eq("status","available");
+
+
+  const {
+    count:pending
+  } =
+    await supabaseClient
+      .from("task_submissions")
+      .select("id",{count:"exact",head:true})
+      .eq("status","pending");
+
+
+  const {
+    data:customers
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("id");
+
+
+  document.getElementById("adminTaskCount")
+    .textContent = total || 0;
+
+  document.getElementById("adminAvailableCount")
+    .textContent = available || 0;
+
+  document.getElementById("adminPendingCount")
+    .textContent = pending || 0;
+
+  document.getElementById("adminCustomerCount")
+    .textContent =
+      customers ? customers.length : 0;
+
+}
+
+
+/* =========================================================
+   ADMIN CREATE TASK
+   ========================================================= */
+
+async function createTask(){
+
+  if(!isAdminUser){
+
+    alert("Admin access required.");
+
+    return;
+  }
+
+
+  const title =
+    document.getElementById("newTaskTitle")
+      .value.trim();
+
+  const reward =
+    Number(
+      document.getElementById("newTaskReward")
+        .value
+    );
+
+  const description =
+    document.getElementById("newTaskDescription")
+      .value.trim();
+
+  const requirements =
+    document.getElementById("newTaskRequirements")
+      .value.trim();
+
+  const minutes =
+    Number(
+      document.getElementById("newTaskMinutes")
+        .value
+    ) || null;
+
+  const submissionType =
+    document.getElementById("newTaskSubmissionType")
+      .value;
+
+
+  const box =
+    document.getElementById("createTaskMessage");
+
+
+  if(!title){
+
+    box.innerHTML =
+      '<div class="notice error">Enter a task title.</div>';
+
+    return;
+  }
+
+
+  if(!reward || reward <= 0){
+
+    box.innerHTML =
+      '<div class="notice error">Enter a valid reward.</div>';
+
+    return;
+  }
+
+
+  const { error } =
+    await supabaseClient
+      .from("orders")
+      .insert({
+
+        product_name:title,
+
+        amount:reward,
+
+        reward:reward,
+
+        description:description,
+
+        requirements:requirements,
+
+        estimated_minutes:minutes,
+
+        submission_type:submissionType,
+
+        status:"available"
+
+      });
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  box.innerHTML =
+    '<div class="notice success-msg">Task created successfully.</div>';
+
+
+  document.getElementById("newTaskTitle").value = "";
+  document.getElementById("newTaskReward").value = "";
+  document.getElementById("newTaskDescription").value = "";
+  document.getElementById("newTaskRequirements").value = "";
+  document.getElementById("newTaskMinutes").value = "";
+
+
+  await loadAdminTasks();
+
+  await loadAdminStats();
+
+}
+
+
+/* =========================================================
+   ADMIN TASKS
+   ========================================================= */
+
+async function loadAdminTasks(){
+
+  const box =
+    document.getElementById("adminTasks");
+
+  box.innerHTML = "Loading...";
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("orders")
+      .select("*")
+      .order("created_at",{ascending:false});
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || !data.length){
+
+    box.innerHTML =
+      "<p>No tasks yet.</p>";
+
+    return;
+  }
+
+
+  box.innerHTML = `
+
+    <table>
+
+      <thead>
+
+        <tr>
+          <th>Task</th>
+          <th>Reward</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+
+      </thead>
+
+      <tbody>
+
+        ${data.map(task => `
+
+          <tr>
+
+            <td>
+              ${escapeHtml(task.product_name)}
+            </td>
+
+            <td>
+              KES ${Number(
+                task.reward ??
+                task.amount ??
+                0
+              ).toFixed(2)}
+            </td>
+
+            <td>
+              <span class="badge ${escapeHtml(task.status)}">
+                ${escapeHtml(task.status)}
+              </span>
+            </td>
+
+            <td>
+
+              ${
+                task.status === "available"
+                ? `
+                  <button class="danger"
+                    onclick="cancelTask(${Number(task.id)})">
+                    Cancel
+                  </button>
+                `
+                : ""
+              }
+
+            </td>
+
+          </tr>
+
+        `).join("")}
+
+      </tbody>
+
+    </table>
+  `;
+
+}
+
+
+/* =========================================================
+   ADMIN CANCEL TASK
+   ========================================================= */
+
+async function cancelTask(orderId){
+
+  if(!confirm("Cancel this task?"))
+    return;
+
+
+  const { error } =
+    await supabaseClient
+      .from("orders")
+      .update({
+        status:"cancelled"
+      })
+      .eq("id",orderId);
+
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  await loadAdminTasks();
+
+  await loadAdminStats();
+
+}
+
+
+/* =========================================================
+   ADMIN SUBMISSIONS
+   ========================================================= */
+
+async function loadAdminSubmissions(){
+
+  const box =
+    document.getElementById("adminSubmissions");
+
+  box.innerHTML = "Loading...";
+
+
+  const { data, error } =
+    await supabaseClient
+      .from("task_submissions")
+      .select(`
+        *,
+        orders(
+          product_name,
+          reward,
+          amount
+        )
+      `)
+      .eq("status","pending")
+      .order("submitted_at",{ascending:false});
+
+
+  if(error){
+
+    box.innerHTML =
+      `<div class="notice error">${escapeHtml(error.message)}</div>`;
+
+    return;
+  }
+
+
+  if(!data || !data.length){
+
+    box.innerHTML =
+      '<div class="notice">No pending submissions.</div>';
+
+    return;
+  }
+
+
+  box.innerHTML =
+    data.map(sub => {
+
+      const task =
+        sub.orders || {};
+
+      return `
+
+        <div class="task">
+
+          <h3>
+            ${escapeHtml(
+              task.product_name ||
+              "Task"
+            )}
+          </h3>
+
+          <p>
+            Customer ID:
+            <span class="small">
+              ${escapeHtml(sub.user_id)}
+            </span>
+          </p>
+
+          <p>
+            Reward:
+            <strong>
+              KES ${Number(
+                sub.reward_amount ??
+                task.reward ??
+                task.amount ??
+                0
+              ).toFixed(2)}
+            </strong>
+          </p>
+
+          <h4>Submitted Work</h4>
+
+          <div class="notice">
+            ${escapeHtml(
+              sub.submission_text ||
+              "No written answer."
+            )}
+          </div>
+
+          ${
+            sub.submission_url
+            ? `
+              <p>
+                Proof URL:
+                <br>
+                ${escapeHtml(sub.submission_url)}
+              </p>
+            `
+            : ""
+          }
+
+          <div class="row">
+
+            <button class="success"
+              onclick="reviewSubmission(${Number(sub.id)},'approved')">
+              Approve & Pay
+            </button>
+
+            <button class="danger"
+              onclick="reviewSubmission(${Number(sub.id)},'rejected')">
+              Reject
+            </button>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+
+}
+
+
+/* =========================================================
+   REVIEW SUBMISSION
+   ========================================================= */
+
+async function reviewSubmission(
+  submissionId,
+  status
+){
+
+  if(!isAdminUser){
+
+    alert("Admin access required.");
+
+    return;
+  }
+
+
+  let note = "";
+
+
+  if(status === "rejected"){
+
+    note =
+      prompt(
+        "Reason for rejection:"
+      ) || "";
+
+  }else{
+
+    if(!confirm(
+      "Approve this submission and credit the task reward?"
+    ))
+      return;
+
+  }
+
+
+  const { data, error } =
+    await supabaseClient.rpc(
+      "review_task_submission",
+      {
+        p_submission_id:submissionId,
+
+        p_status:status,
+
+        p_review_note:note || null
+
+      }
+    );
+
+
+  if(error){
+
+    alert(error.message);
+
+    return;
+  }
+
+
+  alert(
+    status === "approved"
+      ? "Submission approved and reward credited."
+      : "Submission rejected."
+  );
+
+
+  await loadAdmin();
+
+}
+
+
+/* =========================================================
+   UTILITIES
+   ========================================================= */
+
+function formatDate(value){
+
+  if(!value)
+    return "";
+
+  try{
+
+    return new Date(value)
+      .toLocaleString();
+
+  }catch(e){
+
+    return value;
+
+  }
+
+}
+
+
+function escapeHtml(value){
+
+  if(value === null ||
+     value === undefined)
+    return "";
+
+  return String(value)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+
+}
+
+
+/* =========================================================
+   INITIAL BUTTON
+   ========================================================= */
+
+showPage("dashboard");
+
+</script>
+
+</body>
+</html>
