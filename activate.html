@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OrderMatch - Activate Account</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:#f5f7fb;
+  color:#172033;
+}
+
+.container{
+  max-width:500px;
+  margin:50px auto;
+  padding:20px;
+}
+
+.card{
+  background:#fff;
+  border-radius:18px;
+  padding:28px;
+  box-shadow:0 8px 30px rgba(0,0,0,.08);
+}
+
+.logo{
+  text-align:center;
+  font-size:30px;
+  font-weight:800;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  text-align:center;
+  color:#667085;
+  margin-bottom:28px;
+}
+
+.price{
+  text-align:center;
+  font-size:36px;
+  font-weight:800;
+  margin:20px 0;
+}
+
+.notice{
+  background:#f8fafc;
+  border-radius:12px;
+  padding:15px;
+  margin:15px 0;
+  line-height:1.5;
+}
+
+label{
+  display:block;
+  font-weight:700;
+  margin:18px 0 7px;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border:1px solid #d0d5dd;
+  border-radius:10px;
+  font-size:16px;
+}
+
+button{
+  width:100%;
+  border:0;
+  border-radius:10px;
+  padding:15px;
+  margin-top:20px;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  background:#087443;
+  color:white;
+}
+
+button:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+.message{
+  margin-top:18px;
+  padding:14px;
+  border-radius:10px;
+  display:none;
+  line-height:1.5;
+}
+
+.success{
+  background:#ecfdf3;
+  color:#067647;
+}
+
+.error{
+  background:#fef3f2;
+  color:#b42318;
+}
+
+.loading{
+  background:#eff8ff;
+  color:#175cd3;
+}
+
+.back{
+  display:block;
+  text-align:center;
+  margin-top:20px;
+  color:#175cd3;
+  text-decoration:none;
+}
+
+.activated{
+  text-align:center;
+  padding:20px 0;
+}
+
+.check{
+  font-size:55px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <div class="logo">OrderMatch</div>
+
+    <div class="subtitle">
+      Account Activation
+    </div>
+
+    <div id="loadingBox"
+         class="message loading"
+         style="display:block">
+      Checking your account...
+    </div>
+
+    <div id="activationBox" style="display:none">
+
+      <div class="notice">
+        Activate your OrderMatch account to access paid tasks.
+      </div>
+
+      <div class="price">
+        KES 350
+      </div>
+
+      <div class="notice">
+        Enter the M-Pesa number you want to use. An STK Push will
+        be sent to your phone. Complete the payment on your phone.
+      </div>
+
+      <label for="phone">
+        M-Pesa Phone Number
+      </label>
+
+      <input
+        id="phone"
+        type="tel"
+        placeholder="07XXXXXXXX"
+        autocomplete="tel"
+      >
+
+      <button id="activateButton">
+        Activate Account — KES 350
+      </button>
+
+      <div id="message" class="message"></div>
+
+    </div>
+
+    <div id="activatedBox"
+         class="activated"
+         style="display:none">
+
+      <div class="check">✓</div>
+
+      <h2>Account Activated</h2>
+
+      <p>
+        Your OrderMatch account is now activated.
+      </p>
+
+      <a
+        class="back"
+        href="https://nyangimanul-eng.github.io/order-matching-platform-/"
+      >
+        Continue to OrderMatch
+      </a>
+
+    </div>
+
+    <a
+      id="loginBack"
+      class="back"
+      style="display:none"
+      href="https://nyangimanul-eng.github.io/order-matching-platform-/"
+    >
+      Back to OrderMatch
+    </a>
+
+  </div>
+</div>
+
+<script>
+
+const SUPABASE_URL =
+  "https://bdflurarenkcvcnttrya.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_Xg8yB5AE851ABEIHE-ZjCg_faABOZfD";
+
+const supabaseClient =
+  window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+  );
+
+const ACTIVATION_FUNCTION =
+  SUPABASE_URL +
+  "/functions/v1/Mpesa-activation";
+
+const loadingBox =
+  document.getElementById("loadingBox");
+
+const activationBox =
+  document.getElementById("activationBox");
+
+const activatedBox =
+  document.getElementById("activatedBox");
+
+const loginBack =
+  document.getElementById("loginBack");
+
+const message =
+  document.getElementById("message");
+
+const activateButton =
+  document.getElementById("activateButton");
+
+const phoneInput =
+  document.getElementById("phone");
+
+function showMessage(text,type){
+
+  message.textContent = text;
+
+  message.className =
+    "message " + type;
+
+  message.style.display = "block";
+}
+
+function normalizePhone(phone){
+
+  let value =
+    String(phone || "")
+      .replace(/\s+/g,"")
+      .replace(/-/g,"");
+
+  if(value.startsWith("+254")){
+    return "0" + value.substring(4);
+  }
+
+  if(value.startsWith("254")){
+    return "0" + value.substring(3);
+  }
+
+  return value;
+}
+
+function showActivated(){
+
+  loadingBox.style.display = "none";
+  activationBox.style.display = "none";
+  loginBack.style.display = "none";
+  activatedBox.style.display = "block";
+}
+
+async function checkActivation(){
+
+  const {
+    data:{
+      session
+    }
+  } =
+  await supabaseClient.auth.getSession();
+
+  if(!session){
+
+    loadingBox.style.display = "none";
+    activationBox.style.display = "none";
+    activatedBox.style.display = "none";
+    loginBack.style.display = "block";
+
+    showMessage(
+      "Please log in to your OrderMatch account first.",
+      "error"
+    );
+
+    return;
+  }
+
+  const user =
+    session.user;
+
+  const {
+    data:profile,
+    error
+  } =
+  await supabaseClient
+    .from("profiles")
+    .select("account_activated")
+    .eq("id",user.id)
+    .maybeSingle();
+
+  if(error){
+
+    console.error(
+      "Activation status error:",
+      error
+    );
+
+    loadingBox.textContent =
+      "Unable to check your account status.";
+
+    return;
+  }
+
+  if(profile?.account_activated === true){
+
+    showActivated();
+
+    return;
+  }
+
+  loadingBox.style.display = "none";
+  activationBox.style.display = "block";
+}
+
+async function startActivation(){
+
+  const {
+    data:{
+      session
+    }
+  } =
+  await supabaseClient.auth.getSession();
+
+  if(!session){
+
+    showMessage(
+      "Your session has expired. Please log in again.",
+      "error"
+    );
+
+    return;
+  }
+
+  const phone =
+    normalizePhone(
+      phoneInput.value
+    );
+
+  if(!/^07\d{8}$/.test(phone)){
+
+    showMessage(
+      "Enter a valid Kenyan M-Pesa number, for example 0712345678.",
+      "error"
+    );
+
+    return;
+  }
+
+  activateButton.disabled = true;
+
+  showMessage(
+    "Sending the KES 350 M-Pesa payment request...",
+    "loading"
+  );
+
+  try{
+
+    const response =
+      await fetch(
+        ACTIVATION_FUNCTION,
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":"application/json",
+            "Authorization":
+              "Bearer " +
+              session.access_token
+          },
+
+          body:JSON.stringify({
+            phone:phone
+          })
+        }
+      );
+
+    const result =
+      await response.json();
+
+    console.log(
+      "Activation response:",
+      result
+    );
+
+    if(!response.ok || !result.success){
+
+      throw new Error(
+        result.error ||
+        "Unable to start activation payment."
+      );
+    }
+
+    showMessage(
+      "M-Pesa request sent. Complete the KES 350 payment on your phone. Waiting for confirmation...",
+      "loading"
+    );
+
+    await waitForActivation(
+      session.user.id
+    );
+
+  }catch(error){
+
+    console.error(error);
+
+    showMessage(
+      error.message ||
+      "Something went wrong. Please try again.",
+      "error"
+    );
+
+    activateButton.disabled = false;
+  }
+}
+
+async function waitForActivation(userId){
+
+  let attempts = 0;
+
+  const maxAttempts = 24;
+
+  const timer =
+    setInterval(async()=>{
+
+      attempts++;
+
+      const {
+        data:profile,
+        error
+      } =
+      await supabaseClient
+        .from("profiles")
+        .select("account_activated")
+        .eq("id",userId)
+        .maybeSingle();
+
+      if(error){
+
+        console.error(
+          "Activation check:",
+          error
+        );
+
+        return;
+      }
+
+      if(profile?.account_activated === true){
+
+        clearInterval(timer);
+
+        showActivated();
+
+        return;
+      }
+
+      if(attempts >= maxAttempts){
+
+        clearInterval(timer);
+
+        showMessage(
+          "Confirmation has not arrived yet. If you completed the payment, wait a little and refresh the page.",
+          "error"
+        );
+
+        activateButton.disabled = false;
+      }
+
+    },5000);
+}
+
+activateButton.addEventListener(
+  "click",
+  startActivation
+);
+
+checkActivation();
+
+</script>
+
+</body>
+</html>
